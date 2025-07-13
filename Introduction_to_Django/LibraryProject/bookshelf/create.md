@@ -7,15 +7,16 @@
 # Import the Book model
 from bookshelf.models import Book
 
-# Create a Book instance with the specified attributes
-book = Book(title="1984", author="George Orwell", publication_year="1949-06-08")
-
-# Save the book to the database
-book.save()
+# Method 1: Create using Book.objects.create (direct creation and save)
+book = Book.objects.create(title="1984", author="George Orwell", publication_year="1949-06-08")
 
 # Verify the creation
 print(f"Book created: {book.title} by {book.author}")
 print(f"Book ID: {book.id}")
+
+# Method 2: Create instance and save separately
+# book = Book(title="1984", author="George Orwell", publication_year="1949-06-08")
+# book.save()
 ```
 
 ### Expected Output:
@@ -27,7 +28,8 @@ Book ID: 1
 ```
 
 ### Additional Information:
+- The `Book.objects.create()` method creates and saves the object in one step
 - The `publication_year` field is a DateField, so we need to provide a date value
-- The `save()` method commits the object to the database
-- After saving, Django automatically assigns an ID to the object
+- After creation, Django automatically assigns an ID to the object
 - The book is now persisted in the database and can be retrieved later
+- `Book.objects.create()` is more efficient than creating an instance and calling save() separately
