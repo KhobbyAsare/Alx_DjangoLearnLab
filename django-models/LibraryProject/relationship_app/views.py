@@ -20,3 +20,13 @@ class LibraryDetailView(DetailView):
         # Fetch all books associated with this library
         context['books'] = self.object.books.all()
         return context
+
+# Authentication views
+def register(request):
+    return render(request, 'relationship_app/register.html')
+
+def login(request):
+    return render(request, 'relationship_app/login.html')
+
+def logout(request):
+    return render(request, 'relationship_app/logout.html')
