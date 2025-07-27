@@ -133,7 +133,7 @@ CSRF_COOKIE_HTTPONLY = True
 SECURE_SSL_REDIRECT = True
 
 # HTTP Strict Transport Security (HSTS) - tells browsers to use HTTPS only for this site
-SECURE_HSTS_SECONDS = 3600  # Adjust to your needs (e.g., 3600 seconds = 1 hour)
+SECURE_HSTS_SECONDS = 31536000  # Adjust to your needs (e.g., 3600 seconds = 1 hour)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
