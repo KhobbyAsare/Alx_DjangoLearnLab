@@ -137,6 +137,9 @@ SECURE_HSTS_SECONDS = 31536000  # Adjust to your needs (e.g., 3600 seconds = 1 h
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+# Trust the X-Forwarded-Proto header to determine if the request is secure
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Content Security Policy settings example if django-csp middleware is enabled
 # CSP_DEFAULT_SRC = ("'self'",)
 # CSP_SCRIPT_SRC = ("'self'", 'cdnjs.cloudflare.com')
