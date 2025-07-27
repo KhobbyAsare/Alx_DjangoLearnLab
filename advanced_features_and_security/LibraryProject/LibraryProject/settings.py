@@ -23,11 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-u1%72^w3pf%@=jo0st9g7)@%l_v==f(&#u5f&s0%$_%0&z!x5+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False  # Make sure this is False in production for security
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com']  # Add your production domain(s)
 
-
+# Custom user model
 AUTH_USER_MODEL = 'bookshelf.CustomUser'
 
 
@@ -41,17 +41,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bookshelf',
-    "relationship_app",
+    'relationship_app',
+    # 'csp',  # Uncomment if you add django-csp for Content Security Policy
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # Protects against CSRF attacks
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Protects against clickjacking
+    # 'csp.middleware.CSPMiddleware',  # Uncomment if using django-csp
 ]
 
 ROOT_URLCONF = 'LibraryProject.urls'
@@ -59,7 +61,7 @@ ROOT_URLCONF = 'LibraryProject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [],  # Add paths to your custom template dirs if any
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -75,53 +77,69 @@ WSGI_APPLICATION = 'LibraryProject.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',  # Use PostgreSQL or another DB in production
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# =========================
+# SECURITY ENHANCEMENTS
+# =========================
+
+# Enable browser's XSS protection
+SECURE_BROWSER_XSS_FILTER = True
+
+# Prevent browsers from MIME-type sniffing
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Prevent clickjacking attacks by disallowing site to be framed
+X_FRAME_OPTIONS = 'DENY'
+
+# Secure cookies — ensure they're only sent over HTTPS
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+# Make CSRF cookie HttpOnly to mitigate some XSS risks
+CSRF_COOKIE_HTTPONLY = True
+
+# Redirect all HTTP requests to HTTPS (ensure your server supports HTTPS)
+SECURE_SSL_REDIRECT = True
+
+# HTTP Strict Transport Security (HSTS) - tells browsers to use HTTPS only for this site
+SECURE_HSTS_SECONDS = 3600  # Adjust to your needs (e.g., 3600 seconds = 1 hour)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Content Security Policy settings example if django-csp middleware is enabled
+# CSP_DEFAULT_SRC = ("'self'",)
+# CSP_SCRIPT_SRC = ("'self'", 'cdnjs.cloudflare.com')
+# CSP_STYLE_SRC = ("'self'", 'fonts.googleapis.com')
+# CSP_FONT_SRC = ("'self'", 'fonts.gstatic.com')
+# CSP_IMG_SRC = ("'self'", 'data:')

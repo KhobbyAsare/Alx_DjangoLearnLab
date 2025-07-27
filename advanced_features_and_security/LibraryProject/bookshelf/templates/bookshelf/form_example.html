@@ -1,0 +1,5 @@
+<form method="post" action="{% url 'bookshelf:book_create' %}">
+  {% csrf_token %}
+  <!-- your form fields here -->
+  <input type="submit" value="Submit">
+</form>
