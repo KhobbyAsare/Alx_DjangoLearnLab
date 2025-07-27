@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import permission_required
 from .models import Book
-from .forms import BookForm  # You need to create this form
+from .forms import BookForm, ExampleForm  # You need to create this form
 
 @permission_required('bookshelf.can_view', raise_exception=True)
 def book_list(request):
