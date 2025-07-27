@@ -1,0 +1,5 @@
+Super admin
+
+username: Samuel
+email: sam@alx.com
+pass: sam@12345

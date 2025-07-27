@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Book
+from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser, Book
+
+# Custom admin configuration for CustomUser model
+class CustomUserAdmin(UserAdmin):
+    model = CustomUser
+    list_display = ['username', 'email', 'date_of_birth', 'is_staff']
 
 # Custom admin configuration for Book model
 class BookAdmin(admin.ModelAdmin):
@@ -34,5 +40,6 @@ class BookAdmin(admin.ModelAdmin):
         self.message_user(request, f"{queryset.count()} books marked as featured.")
     mark_as_featured.short_description = "Mark selected books as featured"
 
-# Register your models here.
+# Register your models here
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Book, BookAdmin)
