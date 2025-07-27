@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Book List</h1>
+
+  <!-- Show create button only if user has create permission -->
+  {% if perms.bookshelf.can_create %}
+    <p><a href="{% url 'book_create' %}">Add New Book</a></p>
+  {% endif %}
+
+  <ul>
+    {% for book in books %}
+      <li>
+        <strong>{{ book.title }}</strong> by {{ book.author }} ({{ book.publication_year|date:"Y" }})
+        <!-- Show edit and delete links only if user has those permissions -->
+        {% if perms.bookshelf.can_edit %}
+          <a href="{% url 'book_edit' book.pk %}">Edit</a>
+        {% endif %}
+        {% if perms.bookshelf.can_delete %}
+          <a href="{% url 'book_delete' book.pk %}">Delete</a>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>No books available.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
