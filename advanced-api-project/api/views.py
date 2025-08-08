@@ -1,3 +1,64 @@
+
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
+from django.urls import reverse_lazy
+from .models import Book
+from .forms import BookForm  # You need to create this form for Create/Update
+
+# List all books (return JSON)
+class BookListView(ListView):
+    model = Book
+
+    def render_to_response(self, context, **response_kwargs):
+        books = list(self.get_queryset().values())
+        return JsonResponse(books, safe=False)
+
+
+# Retrieve one book by pk (return JSON)
+class BookDetailView(DetailView):
+    model = Book
+
+    def render_to_response(self, context, **response_kwargs):
+        book = model_to_dict(self.get_object())
+        return JsonResponse(book)
+
+
+# Create a book (expects POST form data)
+class BookCreateView(CreateView):
+    model = Book
+    form_class = BookForm
+    success_url = reverse_lazy('book-list')
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return JsonResponse(model_to_dict(self.object), status=201)
+
+
+# Update a book (expects POST or PUT form data)
+class BookUpdateView(UpdateView):
+    model = Book
+    form_class = BookForm
+    success_url = reverse_lazy('book-list')
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return JsonResponse(model_to_dict(self.object))
+
+
+# Delete a book (expects POST or DELETE)
+class BookDeleteView(DeleteView):
+    model = Book
+    success_url = reverse_lazy('book-list')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        return JsonResponse({'deleted': True})
+
+
+
+"""
 from rest_framework import generics
 from .models import Book
 from .serializers import BookSerializer
@@ -59,7 +120,7 @@ class BookDeleteAPI(generics.DestroyAPIView):
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]  # Only authenticated users can delete
 
-
+"""
 
 
 
