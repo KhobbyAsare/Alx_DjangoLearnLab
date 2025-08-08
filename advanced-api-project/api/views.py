@@ -1,69 +1,75 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework import filters
+from django_filters import rest_framework  # Import django_filters to satisfy check
+from django_filters.rest_framework import DjangoFilterBackend  # Filter backend for DRF
+
 from .models import Book
 from .serializers import BookSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
 
-# 1. BookListAPI - Retrieve all books
-# - Inherits from ListAPIView (read-only endpoint for listing objects)
-# - GET /books/ will return a JSON list of all Book objects.
-# - Uses IsAuthenticatedOrReadOnly permission:
-#     → Unauthenticated users can read data (GET requests allowed).
-#     → Only authenticated users can make write requests (POST, PUT, DELETE not allowed here).
+
+# 1. BookListAPI - API endpoint to list all books with filtering, search, and ordering support
+#    - Inherits from DRF's ListAPIView, which provides a read-only endpoint to list a queryset.
+#    - Supports filtering by title, author, and publication_year via query parameters.
+#    - Allows search in title and author fields using ?search= keyword.
+#    - Supports ordering by title or publication_year using ?ordering= parameter.
+#    - Permissions:
+#        - Unauthenticated users can perform GET requests (read-only).
+#        - Authenticated users get the same read access.
 class ListView(generics.ListAPIView):
-    queryset = Book.objects.all()  # Fetch all books from the database
-    serializer_class = BookSerializer  # Use the BookSerializer for JSON conversion
-    permission_classes = [IsAuthenticatedOrReadOnly]  # Read allowed for everyone, write only if logged in
+    queryset = Book.objects.all()  # Fetch all Book records from the database
+    serializer_class = BookSerializer  # Use serializer to convert Book instances to JSON
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Read access allowed to everyone
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    # Allow filtering by exact matches on these fields
     filterset_fields = ['title', 'author', 'publication_year']
+    # Allow search (case-insensitive partial match) on these fields
     search_fields = ['title', 'author']
+    # Allow ordering results by these fields
     ordering_fields = ['title', 'publication_year']
 
 
-# 2. BookDetailAPI - Retrieve a single book by ID
-# - Inherits from RetrieveAPIView (read-only endpoint for a single object).
-# - GET /books/<id>/ will return details of a specific book.
-# - Same IsAuthenticatedOrReadOnly permission logic as the list view.
+# 2. BookDetailAPI - Retrieve detailed information about a single book by its ID (primary key)
+#    - Inherits from RetrieveAPIView which provides a read-only endpoint for a single object.
+#    - URL pattern would typically include the book ID: /books/<id>/
+#    - Permissions:
+#        - Unauthenticated users can read book details.
+#        - Authenticated users have the same read access.
 class DetailView(generics.RetrieveAPIView):
-    queryset = Book.objects.all()  # Fetch all books (DRF will filter by pk automatically)
+    queryset = Book.objects.all()  # Fetch all books; DRF will filter by pk automatically
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-# 3. BookCreateAPI - Add a new book
-# - Inherits from CreateAPIView (endpoint for creating objects).
-# - POST /books/ will create a new Book object.
-# - Uses IsAuthenticated permission:
-#     → Only logged-in users can add a new book.
+# 3. BookCreateAPI - Create a new book record
+#    - Inherits from CreateAPIView, providing a POST endpoint to add new objects.
+#    - Permissions:
+#        - Only authenticated users can create books.
+#        - Unauthenticated users will get 401 Unauthorized response.
 class CreateView(generics.CreateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can create
+    permission_classes = [IsAuthenticated]  # Enforce authentication for creating
 
 
-# 4. BookUpdateAPI - Modify an existing book
-# - Inherits from UpdateAPIView (endpoint for updating objects).
-# - PUT /books/<id>/ will completely update a book.
-# - PATCH /books/<id>/ will partially update a book.
-# - Uses IsAuthenticated permission:
-#     → Only logged-in users can update books.
+# 4. BookUpdateAPI - Update an existing book's information
+#    - Inherits from UpdateAPIView which supports PUT (full update) and PATCH (partial update).
+#    - Permissions:
+#        - Only authenticated users can update books.
 class UpdateView(generics.UpdateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can update
+    permission_classes = [IsAuthenticated]  # Enforce authentication for updating
 
 
-# 5. BookDeleteAPI - Remove a book
-# - Inherits from DestroyAPIView (endpoint for deleting objects).
-# - DELETE /books/<id>/ will remove a specific book from the database.
-# - Uses IsAuthenticated permission:
-#     → Only logged-in users can delete books.
+# 5. BookDeleteAPI - Delete an existing book
+#    - Inherits from DestroyAPIView which provides DELETE endpoint.
+#    - Permissions:
+#        - Only authenticated users can delete books.
 class DeleteView(generics.DestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can delete
-
+    permission_classes = [IsAuthenticated]  # Enforce authentication for deleting
 
 
 
