@@ -1,64 +1,3 @@
-
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.http import JsonResponse
-from django.forms.models import model_to_dict
-from django.urls import reverse_lazy
-from .models import Book
-from .forms import BookForm  # You need to create this form for Create/Update
-
-# List all books (return JSON)
-class BookListView(ListView):
-    model = Book
-
-    def render_to_response(self, context, **response_kwargs):
-        books = list(self.get_queryset().values())
-        return JsonResponse(books, safe=False)
-
-
-# Retrieve one book by pk (return JSON)
-class BookDetailView(DetailView):
-    model = Book
-
-    def render_to_response(self, context, **response_kwargs):
-        book = model_to_dict(self.get_object())
-        return JsonResponse(book)
-
-
-# Create a book (expects POST form data)
-class BookCreateView(CreateView):
-    model = Book
-    form_class = BookForm
-    success_url = reverse_lazy('book-list')
-
-    def form_valid(self, form):
-        self.object = form.save()
-        return JsonResponse(model_to_dict(self.object), status=201)
-
-
-# Update a book (expects POST or PUT form data)
-class BookUpdateView(UpdateView):
-    model = Book
-    form_class = BookForm
-    success_url = reverse_lazy('book-list')
-
-    def form_valid(self, form):
-        self.object = form.save()
-        return JsonResponse(model_to_dict(self.object))
-
-
-# Delete a book (expects POST or DELETE)
-class BookDeleteView(DeleteView):
-    model = Book
-    success_url = reverse_lazy('book-list')
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.delete()
-        return JsonResponse({'deleted': True})
-
-
-
-"""
 from rest_framework import generics
 from .models import Book
 from .serializers import BookSerializer
@@ -71,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 # - Uses IsAuthenticatedOrReadOnly permission:
 #     → Unauthenticated users can read data (GET requests allowed).
 #     → Only authenticated users can make write requests (POST, PUT, DELETE not allowed here).
-class BookListAPI(generics.ListAPIView):
+class ListView(generics.ListAPIView):
     queryset = Book.objects.all()  # Fetch all books from the database
     serializer_class = BookSerializer  # Use the BookSerializer for JSON conversion
     permission_classes = [IsAuthenticatedOrReadOnly]  # Read allowed for everyone, write only if logged in
@@ -81,7 +20,7 @@ class BookListAPI(generics.ListAPIView):
 # - Inherits from RetrieveAPIView (read-only endpoint for a single object).
 # - GET /books/<id>/ will return details of a specific book.
 # - Same IsAuthenticatedOrReadOnly permission logic as the list view.
-class BookDetailAPI(generics.RetrieveAPIView):
+class DetailView(generics.RetrieveAPIView):
     queryset = Book.objects.all()  # Fetch all books (DRF will filter by pk automatically)
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -92,7 +31,7 @@ class BookDetailAPI(generics.RetrieveAPIView):
 # - POST /books/ will create a new Book object.
 # - Uses IsAuthenticated permission:
 #     → Only logged-in users can add a new book.
-class BookCreateAPI(generics.CreateAPIView):
+class CreateView(generics.CreateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]  # Only authenticated users can create
@@ -104,7 +43,7 @@ class BookCreateAPI(generics.CreateAPIView):
 # - PATCH /books/<id>/ will partially update a book.
 # - Uses IsAuthenticated permission:
 #     → Only logged-in users can update books.
-class BookUpdateAPI(generics.UpdateAPIView):
+class UpdateView(generics.UpdateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]  # Only authenticated users can update
@@ -115,12 +54,12 @@ class BookUpdateAPI(generics.UpdateAPIView):
 # - DELETE /books/<id>/ will remove a specific book from the database.
 # - Uses IsAuthenticated permission:
 #     → Only logged-in users can delete books.
-class BookDeleteAPI(generics.DestroyAPIView):
+class DeleteView(generics.DestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]  # Only authenticated users can delete
 
-"""
+
 
 
 
