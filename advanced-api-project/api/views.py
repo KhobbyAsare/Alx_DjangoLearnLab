@@ -2,7 +2,8 @@ from rest_framework import generics
 from .models import Book
 from .serializers import BookSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 # 1. BookListAPI - Retrieve all books
 # - Inherits from ListAPIView (read-only endpoint for listing objects)
@@ -14,6 +15,10 @@ class ListView(generics.ListAPIView):
     queryset = Book.objects.all()  # Fetch all books from the database
     serializer_class = BookSerializer  # Use the BookSerializer for JSON conversion
     permission_classes = [IsAuthenticatedOrReadOnly]  # Read allowed for everyone, write only if logged in
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['title', 'author', 'publication_year']
+    search_fields = ['title', 'author']
+    ordering_fields = ['title', 'publication_year']
 
 
 # 2. BookDetailAPI - Retrieve a single book by ID
