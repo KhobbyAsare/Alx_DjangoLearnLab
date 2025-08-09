@@ -10,123 +10,163 @@ from datetime import date
 
 class BookAPITestCase(APITestCase):
     """
-    Unit test suite for the Book API endpoints.
+    Comprehensive test suite for Book API endpoints.
+    Uses Django's test database to avoid impacting production data.
     """
 
-    def setUp(self):
-        # Create user for authentication tests
-        self.user = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Set up data for the whole TestCase (runs once).
+        This data will be available for all tests but won't be modified.
+        """
+        # Create test user
+        cls.user = User.objects.create_user(
             username='testuser',
-            password='testpass'
+            password='testpass123',
+            email='test@example.com'
         )
-
+        
         # Create authors
-        self.author1 = Author.objects.create(name='Author A')
-        self.author2 = Author.objects.create(name='Author B')
+        cls.author1 = Author.objects.create(name='J.K. Rowling')
+        cls.author2 = Author.objects.create(name='George R.R. Martin')
 
-        # Create sample books
+    def setUp(self):
+        """
+        Set up data for each individual test (runs before each test).
+        These objects will be recreated for each test method.
+        """
+        # Create test books
         self.book1 = Book.objects.create(
-            title='Book One',
+            title='Harry Potter',
             author=self.author1,
-            publication_year=date(2020, 1, 1)
+            publication_year=date(1997, 6, 26)
         )
         self.book2 = Book.objects.create(
-            title='Book Two',
+            title='A Game of Thrones',
             author=self.author2,
-            publication_year=date(2021, 1, 1)
+            publication_year=date(1996, 8, 1)
         )
+        
+        # Set up API endpoints
+        self.list_url = reverse('book-list')  # '/api/books/'
+        self.detail_url = reverse('book-detail', kwargs={'pk': self.book1.pk})  # '/api/books/1/'
 
-        # API endpoint URLs
-        self.list_url = reverse('book-list')
-        self.detail_url = reverse('book-detail', args=[self.book1.id])
-
-    def authenticate(self):
-        """Helper to authenticate the test user."""
+    def authenticate_user(self):
+        """Helper method to authenticate the test user for protected endpoints"""
         self.client.force_authenticate(user=self.user)
 
+    # Authentication Tests
+    def test_unauthenticated_access_to_protected_endpoints(self):
+        """Verify unauthenticated users cannot access protected endpoints"""
+        endpoints = [
+            (self.client.post, self.list_url, {'title': 'New Book', 'author': self.author1.id}),
+            (self.client.put, self.detail_url, {'title': 'Updated Title', 'author': self.author1.id}),
+            (self.client.delete, self.detail_url, None)
+        ]
+        
+        for method, url, data in endpoints:
+            response = method(url, data, format='json')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    # CRUD Operation Tests
     def test_list_books(self):
-        """GET /books/ should return all books."""
+        """GET /books/ should return all books with correct structure"""
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]['title'], 'Book One')
-        self.assertEqual(response.data[1]['title'], 'Book Two')
+        
+        # Verify response structure
+        for book in response.data:
+            self.assertIn('id', book)
+            self.assertIn('title', book)
+            self.assertIn('author', book)
+            self.assertIn('publication_year', book)
 
     def test_retrieve_single_book(self):
-        """GET /books/<id>/ should return that book."""
+        """GET /books/<id>/ should return the requested book"""
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['title'], 'Book One')
+        self.assertEqual(response.data['title'], 'Harry Potter')
         self.assertEqual(response.data['author'], self.author1.id)
 
+    def test_create_book_authenticated(self):
+        """POST /books/ should create a new book when authenticated"""
+        self.authenticate_user()
+        new_book_data = {
+            'title': 'The Hobbit',
+            'author': self.author1.id,
+            'publication_year': '1937-09-21'
+        }
+        
+        response = self.client.post(self.list_url, new_book_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Book.objects.count(), 3)
+        self.assertEqual(Book.objects.latest('id').title, 'The Hobbit')
+
+    def test_update_book_authenticated(self):
+        """PUT /books/<id>/ should update an existing book when authenticated"""
+        self.authenticate_user()
+        updated_data = {
+            'title': 'Harry Potter and the Philosopher\'s Stone',
+            'author': self.author1.id,
+            'publication_year': '1997-06-26'
+        }
+        
+        response = self.client.put(self.detail_url, updated_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.book1.refresh_from_db()
+        self.assertEqual(self.book1.title, updated_data['title'])
+
+    def test_delete_book_authenticated(self):
+        """DELETE /books/<id>/ should remove the book when authenticated"""
+        self.authenticate_user()
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Book.objects.count(), 1)
+        self.assertFalse(Book.objects.filter(pk=self.book1.pk).exists())
+
+    # Filtering and Ordering Tests
     def test_filter_books_by_author(self):
-        """GET /books/?author=<id> should return matching books."""
+        """GET /books/?author=<id> should return books by specified author"""
         response = self.client.get(self.list_url, {'author': self.author1.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['author'], self.author1.id)
 
     def test_order_books_by_publication_year(self):
-        """GET /books/?ordering=publication_year should return books sorted by year."""
+        """GET /books/?ordering=publication_year should return ordered results"""
         response = self.client.get(self.list_url, {'ordering': 'publication_year'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        titles = [book['title'] for book in response.data]
-        self.assertEqual(titles, ['Book One', 'Book Two'])
+        publication_years = [book['publication_year'] for book in response.data]
+        self.assertEqual(publication_years, sorted(publication_years))
 
-    def test_create_book_authenticated(self):
-        """POST /books/ should create a book if authenticated."""
-        self.authenticate()
-        data = {
-            'title': 'Book Three',
-            'author': self.author1.id,
-            'publication_year': '2022-01-01'
-        }
-        response = self.client.post(self.list_url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Book.objects.count(), 3)
-
-    def test_create_book_unauthenticated(self):
-        """POST /books/ without login should be forbidden."""
-        data = {
-            'title': 'Book Four',
-            'author': self.author1.id,
-            'publication_year': '2023-01-01'
-        }
-        response = self.client.post(self.list_url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_update_book_authenticated(self):
-        """PUT /books/<id>/ should update a book if authenticated."""
-        self.authenticate()
-        data = {
-            'title': 'Updated Book One',
-            'author': self.author1.id,
-            'publication_year': '2020-01-01'
-        }
-        response = self.client.put(self.detail_url, data)
+    def test_order_books_by_title(self):
+        """GET /books/?ordering=title should return alphabetically ordered results"""
+        response = self.client.get(self.list_url, {'ordering': 'title'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.book1.refresh_from_db()
-        self.assertEqual(self.book1.title, 'Updated Book One')
+        titles = [book['title'] for book in response.data]
+        self.assertEqual(titles, sorted(titles))
 
-    def test_update_book_unauthenticated(self):
-        """PUT /books/<id>/ without login should be forbidden."""
-        data = {
-            'title': 'No Auth Update',
-            'author': self.author1.id,
-            'publication_year': '2020-01-01'
-        }
-        response = self.client.put(self.detail_url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    # Validation Tests
+    def test_create_book_invalid_data(self):
+        """POST /books/ should reject invalid data with proper errors"""
+        self.authenticate_user()
+        invalid_data = [
+            ({}, 'empty data'),
+            ({'title': ''}, 'empty title'),
+            ({'title': 'No Author'}, 'missing author'),
+            ({'title': 'Bad Date', 'author': self.author1.id, 'publication_year': 'invalid-date'}, 'invalid date')
+        ]
+        
+        for data, description in invalid_data:
+            with self.subTest(description=description):
+                response = self.client.post(self.list_url, data, format='json')
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('errors', str(response.data))
 
-    def test_delete_book_authenticated(self):
-        """DELETE /books/<id>/ should remove a book if authenticated."""
-        self.authenticate()
-        response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Book.objects.count(), 1)
-
-    def test_delete_book_unauthenticated(self):
-        """DELETE /books/<id>/ without login should be forbidden."""
-        response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(Book.objects.count(), 2)
+    def tearDown(self):
+        """Clean up after each test"""
+        # Explicitly clear authentication
+        self.client.force_authenticate(user=None)
+        # Django automatically handles test database cleanup
