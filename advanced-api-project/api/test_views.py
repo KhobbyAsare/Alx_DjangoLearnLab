@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from .models import Author, Book
 from datetime import date, timedelta
+from django.conf import settings
 
 class BookAPITests(APITestCase):
     def setUp(self):
@@ -31,6 +32,46 @@ class BookAPITests(APITestCase):
         self.create_url = reverse('book-create')
         self.update_url = reverse('book-update', kwargs={'pk': self.book1.pk})
         self.delete_url = reverse('book-delete', kwargs={'pk': self.book1.pk})
+
+    def test_using_test_database(self):
+        """Verify we're using the test database"""
+        db_name = str(settings.DATABASES['default']['NAME'])
+        # Check for common test database patterns
+        is_test_db = any([
+            'test_' in db_name,
+            db_name.endswith('_test'),
+            ':memory:' in db_name,
+            'test_db' in db_name,
+            db_name.endswith('test.sqlite3'),
+            db_name.endswith('test.db')
+        ])
+        self.assertTrue(is_test_db, f"Not using test database! Current database: {db_name}")
+
+    def test_authenticated_access_with_login(self):
+        """Test authenticated user access using client.login"""
+        # Login the test user
+        self.assertTrue(self.client.login(username='testuser', password='testpass123'))
+        
+        # Test create view
+        data = {
+            'title': 'New Book',
+            'publication_year': '2022-01-01',
+            'author': self.author.pk
+        }
+        response = self.client.post(self.create_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Test update view
+        update_data = {'title': 'Updated Title'}
+        response = self.client.patch(self.update_url, update_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Test delete view
+        response = self.client.delete(self.delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        
+        # Logout when done
+        self.client.logout()
 
     def test_list_books_unauthenticated(self):
         """Test that unauthenticated users can list books"""
