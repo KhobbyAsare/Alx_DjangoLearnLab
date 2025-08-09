@@ -24,7 +24,7 @@ class ListView(generics.ListAPIView):
     # Allow filtering by exact matches on these fields
     filterset_fields = ['title', 'author', 'publication_year']
     # Allow search (case-insensitive partial match) on these fields
-    search_fields = ['title', 'author']
+    search_fields = ['title', 'author__name']
     # Allow ordering results by these fields
     ordering_fields = ['title', 'publication_year']
 

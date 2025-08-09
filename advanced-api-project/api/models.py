@@ -35,3 +35,10 @@ class Book(models.Model):
     title = models.CharField(max_length=100)
     publication_year = models.DateField()
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def author_name(self):
+        return self.author.name

@@ -9,9 +9,10 @@ from .models import Author, Book
 # - 'publication_year': The year the book was published (validated so it cannot be in the future).
 # - 'author': The ID of the related Author.
 class BookSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source='author.name', read_only=True)
     class Meta:
         model = Book
-        fields = ['title', 'publication_year', 'author']
+        fields = ['id', 'title', 'publication_year', 'author', 'author_name']
 
     def validate_publication_year(self, value):
         """
@@ -35,4 +36,4 @@ class AuthorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = ['name', 'books']
+        fields = ['id','name', 'books']
