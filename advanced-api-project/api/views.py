@@ -73,7 +73,6 @@ class DeleteView(generics.DestroyAPIView):
 
 
 
-
 """
 Suggested Refinement: Combine endpoints for RESTful simplicity
 Instead of having separate Create, Update, and Delete classes, DRF lets you merge them into two main endpoints:
