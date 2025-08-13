@@ -1,6 +1,13 @@
 {% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Register - Django Blog{% endblock %}
+
 {% block content %}
-<div class="form-container">
+<!-- Load register-specific CSS -->
+<link rel="stylesheet" href="{% static 'css/register.css' %}">
+
+<div class="register-form">
     <h2>Register</h2>
     
     <form method="post">
@@ -9,8 +16,11 @@
         <button type="submit">Sign Up</button>
     </form>
     
-    <div class="auth-links">
+    <div class="register-links">
         <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
     </div>
 </div>
+
+<!-- Load register-specific JavaScript -->
+<script src="{% static 'js/register.js' %}"></script>
 {% endblock %}
