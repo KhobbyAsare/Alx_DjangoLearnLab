@@ -7,15 +7,19 @@
 <!-- Load register-specific CSS -->
 <link rel="stylesheet" href="{% static 'css/register.css' %}">
 
-<h2>Register</h2>
-
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Sign Up</button>
-</form>
-
-<p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+<div class="form-container">
+    <h2>Register</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Sign Up</button>
+    </form>
+    
+    <div class="auth-links">
+        <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+    </div>
+</div>
 
 <!-- Load register-specific JavaScript -->
 <script src="{% static 'js/register.js' %}"></script>
