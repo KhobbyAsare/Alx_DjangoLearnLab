@@ -1,11 +1,11 @@
 from django.urls import path
-from .views import CustomLoginView, CustomLogoutView, RegisterView, ProfileView
-from django.views.generic import TemplateView
+from . import views
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='blog/home.html'), name='home'),
-    path('login/', CustomLoginView.as_view(), name='login'),
-    path('logout/', CustomLogoutView.as_view(), name='logout'),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('profile/', ProfileView.as_view(), name='profile'),
+    path('', views.home, name='home'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('register/', views.register_view, name='register'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile_view, name='edit_profile'),
 ]
