@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Post, Comment, Tag
 from django.utils.text import slugify
+from taggit.forms import TagWidget
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -163,6 +164,40 @@ class PostForm(forms.ModelForm):
                 defaults={'slug': slugify(tag_name)}
             )
             post.tags.add(tag)
+
+
+class TaggitPostForm(forms.ModelForm):
+    """Alternative form using django-taggit's TagWidget"""
+    title = forms.CharField(
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter post title',
+            'maxlength': '200'
+        })
+    )
+    content = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Write your post content here...',
+            'rows': 8,
+            'cols': 80
+        })
+    )
+    
+    class Meta:
+        model = Post
+        fields = ['title', 'content', 'taggit_tags']
+        widgets = {
+            'taggit_tags': TagWidget(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter tags separated by commas',
+                'data-toggle': 'tooltip',
+                'title': 'Separate tags with commas. Tags will be created automatically.'
+            })
+        }
 
 
 class SearchForm(forms.Form):
