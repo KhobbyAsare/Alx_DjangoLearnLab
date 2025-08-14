@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Post
+from .models import Post, Comment
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -102,3 +102,44 @@ class PostForm(forms.ModelForm):
         if commit:
             post.save()
         return post
+
+
+class CommentForm(forms.ModelForm):
+    """Form for creating and updating comments"""
+    content = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control comment-textarea',
+            'placeholder': 'Write your comment here...',
+            'rows': 4,
+            'cols': 50
+        }),
+        label='Comment'
+    )
+
+    class Meta:
+        model = Comment
+        fields = ['content']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['content'].widget.attrs.update({
+            'style': 'resize: vertical; min-height: 100px;'
+        })
+
+    def clean_content(self):
+        """Validate comment content"""
+        content = self.cleaned_data['content']
+        if len(content.strip()) < 5:
+            raise forms.ValidationError('Comment must be at least 5 characters long.')
+        if len(content) > 1000:
+            raise forms.ValidationError('Comment cannot exceed 1000 characters.')
+        return content.strip()
+
+    def save(self, commit=True):
+        """Save method for creating/updating comments"""
+        comment = super().save(commit=False)
+        comment.content = self.cleaned_data['content']
+        if commit:
+            comment.save()
+        return comment

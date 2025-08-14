@@ -1,0 +1,339 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Edit Comment - Django Blog{% endblock %}
+
+{% block content %}
+<div class="comment-edit-container">
+    <div class="comment-edit-card">
+        <h1>Edit Comment</h1>
+        
+        <div class="original-post-info">
+            <h3>On Post: <a href="{% url 'post_detail' comment.post.pk %}">{{ comment.post.title }}</a></h3>
+            <p class="post-author">by {{ comment.post.author.username }}</p>
+        </div>
+        
+        <form method="post" class="comment-edit-form" id="commentEditForm">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="field-errors">
+                        {% for error in form.content.errors %}
+                            <span class="error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="char-counter">
+                    <span id="charCounter">{{ comment.content|length }}</span>/1000 characters
+                </div>
+            </div>
+            
+            <div class="comment-meta">
+                <p><strong>Originally posted:</strong> {{ comment.created_at|date:"F d, Y \a\t g:i A" }}</p>
+                {% if comment.updated_at != comment.created_at %}
+                    <p><strong>Last edited:</strong> {{ comment.updated_at|date:"F d, Y \a\t g:i A" }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    Update Comment
+                </button>
+                <a href="{% url 'post_detail' comment.post.pk %}#comment-{{ comment.pk }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+        
+        <div class="comment-guidelines">
+            <h4>Comment Guidelines</h4>
+            <ul>
+                <li>✅ Keep comments relevant to the post</li>
+                <li>✅ Be respectful and constructive</li>
+                <li>✅ Use proper grammar and spelling</li>
+                <li>❌ No spam, ads, or inappropriate content</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.comment-edit-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.comment-edit-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.comment-edit-card h1 {
+    color: #333;
+    font-size: 2rem;
+    margin-bottom: 30px;
+    text-align: center;
+    text-shadow: none;
+}
+
+.original-post-info {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 4px solid #667eea;
+}
+
+.original-post-info h3 {
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.original-post-info h3 a {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.original-post-info h3 a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.post-author {
+    color: #666;
+    font-style: italic;
+    margin: 0;
+}
+
+.comment-edit-form {
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 16px;
+    line-height: 1.6;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    resize: vertical;
+    min-height: 120px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 8px;
+}
+
+.field-errors {
+    margin-top: 8px;
+}
+
+.field-errors .error {
+    display: block;
+    color: #dc3545;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: rgba(220, 53, 69, 0.1);
+    padding: 8px 12px;
+    border-radius: 5px;
+    border-left: 3px solid #dc3545;
+    margin-bottom: 5px;
+}
+
+.comment-meta {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.comment-meta p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+    padding: 12px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+    font-size: 16px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.comment-guidelines {
+    background: rgba(40, 167, 69, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #28a745;
+}
+
+.comment-guidelines h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.comment-guidelines ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.comment-guidelines li {
+    padding: 5px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+@media (max-width: 768px) {
+    .comment-edit-container {
+        padding: 10px;
+    }
+    
+    .comment-edit-card {
+        padding: 25px;
+    }
+    
+    .comment-edit-card h1 {
+        font-size: 1.6rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('textarea');
+    const charCounter = document.getElementById('charCounter');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('commentEditForm');
+    
+    // Character counter
+    if (textarea && charCounter) {
+        textarea.addEventListener('input', function() {
+            const length = this.value.length;
+            charCounter.textContent = length;
+            
+            if (length > 1000) {
+                charCounter.style.color = '#dc3545';
+            } else if (length > 900) {
+                charCounter.style.color = '#fd7e14';
+            } else {
+                charCounter.style.color = '#666';
+            }
+        });
+        
+        // Initialize counter
+        charCounter.textContent = textarea.value.length;
+    }
+    
+    // Form submission with loading state
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Updating...';
+            
+            // Add spinner
+            const spinner = document.createElement('span');
+            spinner.innerHTML = ' ⟳';
+            spinner.style.animation = 'spin 1s linear infinite';
+            submitBtn.appendChild(spinner);
+            
+            // Add CSS for spinner animation
+            if (!document.getElementById('spinner-style')) {
+                const style = document.createElement('style');
+                style.id = 'spinner-style';
+                style.textContent = `
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    }
+    
+    // Auto-focus on textarea
+    if (textarea) {
+        textarea.focus();
+        // Move cursor to end
+        textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+    }
+});
+</script>
+{% endblock %}

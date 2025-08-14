@@ -1,15 +1,15 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import HttpResponse
-from .forms import UserProfileForm, PostForm
-from .models import Post
+from django.http import HttpResponse, HttpResponseRedirect
+from .forms import UserProfileForm, PostForm, CommentForm
+from .models import Post, Comment
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 
 
 def home(request):
@@ -114,6 +114,37 @@ class PostDetailView(generic.DetailView):
     model = Post
     template_name = 'blog/post_detail.html'
     context_object_name = 'post'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comments'] = self.object.comments.all()
+        context['comment_form'] = CommentForm()
+        context['comment_count'] = self.object.comments.count()
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Handle comment form submission"""
+        self.object = self.get_object()
+        
+        if not request.user.is_authenticated:
+            messages.error(request, 'You must be logged in to comment.')
+            return redirect('login')
+        
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = self.object
+            comment.author = request.user
+            comment.save()
+            messages.success(request, 'Your comment has been added successfully!')
+            return HttpResponseRedirect(reverse('post_detail', args=[self.object.pk]))
+        else:
+            messages.error(request, 'Please correct the errors in your comment.')
+            
+        # If form is invalid, redisplay the page with errors
+        context = self.get_context_data()
+        context['comment_form'] = comment_form
+        return render(request, self.template_name, context)
 
 
 class PostCreateView(LoginRequiredMixin, generic.CreateView):
@@ -168,3 +199,113 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Post deleted successfully!')
         return super().delete(request, *args, **kwargs)
+
+
+# ............CRUD FOR COMMENTS USING CBV AND FBV
+
+@login_required
+def add_comment(request, post_id):
+    """Add a new comment to a post"""
+    post = get_object_or_404(Post, pk=post_id)
+    
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            messages.success(request, 'Your comment has been added successfully!')
+            return HttpResponseRedirect(reverse('post_detail', args=[post_id]))
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CommentForm()
+    
+    context = {
+        'form': form,
+        'post': post
+    }
+    return render(request, 'blog/add_comment.html', context)
+
+
+class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
+    """Update a comment - only by the comment author"""
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/edit_comment.html'
+    context_object_name = 'comment'
+    
+    def test_func(self):
+        """Test if the current user is the author of the comment"""
+        comment = self.get_object()
+        return comment.author == self.request.user
+    
+    def handle_no_permission(self):
+        """Handle case when user doesn't have permission"""
+        messages.error(self.request, 'You can only edit your own comments.')
+        comment = self.get_object()
+        return redirect('post_detail', pk=comment.post.pk)
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Comment updated successfully!')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('post_detail', kwargs={'pk': self.object.post.pk})
+
+
+class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
+    """Delete a comment - only by the comment author"""
+    model = Comment
+    template_name = 'blog/comment_confirm_delete.html'
+    context_object_name = 'comment'
+    
+    def test_func(self):
+        """Test if the current user is the author of the comment"""
+        comment = self.get_object()
+        return comment.author == self.request.user
+    
+    def handle_no_permission(self):
+        """Handle case when user doesn't have permission"""
+        messages.error(self.request, 'You can only delete your own comments.')
+        comment = self.get_object()
+        return redirect('post_detail', pk=comment.post.pk)
+    
+    def delete(self, request, *args, **kwargs):
+        comment = self.get_object()
+        post_pk = comment.post.pk
+        messages.success(request, 'Comment deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse('post_detail', kwargs={'pk': self.object.post.pk})
+
+
+# Function-based view to display post with comments and comment form
+def post_detail_with_comments(request, pk):
+    """Display post with comments and handle comment form submission"""
+    post = get_object_or_404(Post, pk=pk)
+    comments = post.comments.all()
+    
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            messages.success(request, 'Your comment has been added successfully!')
+            return HttpResponseRedirect(reverse('post_detail', args=[pk]))
+        else:
+            messages.error(request, 'Please correct the errors in your comment.')
+    else:
+        comment_form = CommentForm()
+    
+    context = {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form,
+        'comment_count': comments.count()
+    }
+    return render(request, 'blog/post_detail.html', context)
