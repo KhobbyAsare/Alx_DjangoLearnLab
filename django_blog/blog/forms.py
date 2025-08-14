@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from .models import Post
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -66,3 +67,38 @@ class UserProfileForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class PostForm(forms.ModelForm):
+    """Form for creating and updating blog posts"""
+    title = forms.CharField(
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter post title',
+            'maxlength': '200'
+        })
+    )
+    content = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Write your post content here...',
+            'rows': 8,
+            'cols': 80
+        })
+    )
+
+    class Meta:
+        model = Post
+        fields = ['title', 'content']
+
+    def save(self, commit=True):
+        """Save method for creating/updating posts"""
+        post = super().save(commit=False)
+        post.title = self.cleaned_data['title']
+        post.content = self.cleaned_data['content']
+        if commit:
+            post.save()
+        return post

@@ -1,0 +1,264 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Blog Posts - Django Blog{% endblock %}
+
+{% block content %}
+<div class="post-list-container">
+    <div class="post-list-header">
+        <h1>Blog Posts</h1>
+        {% if user.is_authenticated %}
+            <a href="{% url 'post_create' %}" class="btn btn-primary">Write New Post</a>
+        {% endif %}
+    </div>
+
+    {% if posts %}
+        <div class="posts-grid">
+            {% for post in posts %}
+                <article class="post-card">
+                    <div class="post-header">
+                        <h2><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h2>
+                        <div class="post-meta">
+                            <span class="author">By {{ post.author.username }}</span>
+                            <span class="date">{{ post.published_date|date:"F d, Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="post-content-preview">
+                        {{ post.content|truncatewords:30|linebreaks }}
+                    </div>
+                    
+                    <div class="post-actions">
+                        <a href="{% url 'post_detail' post.pk %}" class="btn btn-outline">Read More</a>
+                        {% if user == post.author %}
+                            <a href="{% url 'post_update' post.pk %}" class="btn btn-secondary">Edit</a>
+                            <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger">Delete</a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="page-link">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Previous</a>
+                {% endif %}
+                
+                <span class="current-page">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-posts">
+            <h2>No posts yet!</h2>
+            <p>Be the first to share something amazing.</p>
+            {% if user.is_authenticated %}
+                <a href="{% url 'post_create' %}" class="btn btn-primary">Create First Post</a>
+            {% else %}
+                <p><a href="{% url 'login' %}">Login</a> to create a post.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.post-list-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.post-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.post-list-header h1 {
+    color: white;
+    margin: 0;
+}
+
+.posts-grid {
+    display: grid;
+    gap: 30px;
+}
+
+.post-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.post-header h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.post-header h2 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.post-header h2 a:hover {
+    color: #667eea;
+}
+
+.post-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.post-content-preview {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.post-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline {
+    border: 2px solid #667eea;
+    color: #667eea;
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.no-posts {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(15px);
+}
+
+.no-posts h2 {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.no-posts p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 20px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.page-link {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background: #667eea;
+    color: white;
+}
+
+.current-page {
+    padding: 8px 12px;
+    background: #667eea;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .post-list-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .post-actions {
+        justify-content: center;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}

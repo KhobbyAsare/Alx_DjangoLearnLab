@@ -1,0 +1,341 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}{{ post.title }} - Django Blog{% endblock %}
+
+{% block content %}
+<div class="post-detail-container">
+    <article class="post-detail">
+        <header class="post-header">
+            <h1>{{ post.title }}</h1>
+            <div class="post-meta">
+                <div class="author-info">
+                    <span class="author">By <strong>{{ post.author.username }}</strong></span>
+                    {% if post.author.first_name or post.author.last_name %}
+                        <span class="author-name">({{ post.author.first_name }} {{ post.author.last_name }})</span>
+                    {% endif %}
+                </div>
+                <div class="post-date">
+                    <span>Published on {{ post.published_date|date:"F d, Y \a\t g:i A" }}</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="post-content">
+            {{ post.content|linebreaks }}
+        </div>
+
+        <footer class="post-footer">
+            <div class="post-actions">
+                {% if user == post.author %}
+                    <a href="{% url 'post_update' post.pk %}" class="btn btn-primary">Edit Post</a>
+                    <a href="{% url 'post_delete' post.pk %}" class="btn btn-danger">Delete Post</a>
+                {% endif %}
+                <a href="{% url 'post_list' %}" class="btn btn-secondary">Back to All Posts</a>
+            </div>
+        </footer>
+    </article>
+
+    <!-- Author Info Section -->
+    <aside class="author-section">
+        <h3>About the Author</h3>
+        <div class="author-card">
+            <div class="author-details">
+                <h4>{{ post.author.username }}</h4>
+                {% if post.author.first_name or post.author.last_name %}
+                    <p class="author-full-name">{{ post.author.first_name }} {{ post.author.last_name }}</p>
+                {% endif %}
+                {% if post.author.email %}
+                    <p class="author-email">{{ post.author.email }}</p>
+                {% endif %}
+                <p class="author-posts">
+                    {% with post.author.post_set.count as post_count %}
+                        {% if post_count == 1 %}
+                            1 post published
+                        {% else %}
+                            {{ post_count }} posts published
+                        {% endif %}
+                    {% endwith %}
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Related Posts -->
+    {% if post.author.post_set.count > 1 %}
+    <section class="related-posts">
+        <h3>More from {{ post.author.username }}</h3>
+        <div class="related-posts-grid">
+            {% for related_post in post.author.post_set.all %}
+                {% if related_post.pk != post.pk %}
+                    <div class="related-post-card">
+                        <h4><a href="{% url 'post_detail' related_post.pk %}">{{ related_post.title }}</a></h4>
+                        <p class="related-post-date">{{ related_post.published_date|date:"M d, Y" }}</p>
+                        <p class="related-post-preview">{{ related_post.content|truncatewords:15 }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<style>
+.post-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.post-detail {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 30px;
+}
+
+.post-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.post-header h1 {
+    color: #333;
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    line-height: 1.2;
+    text-shadow: none;
+}
+
+.post-meta {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.author {
+    font-weight: 600;
+}
+
+.author-name {
+    font-style: italic;
+    color: #888;
+}
+
+.post-date {
+    text-align: right;
+}
+
+.post-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #444;
+    margin-bottom: 30px;
+}
+
+.post-content p {
+    margin-bottom: 20px;
+}
+
+.post-footer {
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.post-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+.author-section {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.author-section h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+.author-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.author-details h4 {
+    color: #667eea;
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+}
+
+.author-details p {
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.author-full-name {
+    font-weight: 600;
+    color: #555;
+}
+
+.author-posts {
+    font-style: italic;
+}
+
+.related-posts {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.related-posts h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+.related-posts-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.related-post-card {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.related-post-card:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(5px);
+}
+
+.related-post-card h4 {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.related-post-card h4 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.related-post-card h4 a:hover {
+    color: #667eea;
+}
+
+.related-post-date {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.related-post-preview {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .post-detail-container {
+        padding: 10px;
+    }
+    
+    .post-detail {
+        padding: 25px;
+    }
+    
+    .post-header h1 {
+        font-size: 2rem;
+    }
+    
+    .post-meta {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .post-date {
+        text-align: left;
+    }
+    
+    .post-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .author-card {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
