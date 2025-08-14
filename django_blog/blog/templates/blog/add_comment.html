@@ -1,0 +1,433 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}Add Comment - {{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="add-comment-container">
+    <div class="add-comment-card">
+        <div class="comment-header">
+            <h1>💬 Add Comment</h1>
+            <div class="post-context">
+                <h3>On Post: <a href="{% url 'post_detail' post.pk %}" class="post-link">{{ post.title }}</a></h3>
+                <p class="post-author">by {{ post.author.username }} on {{ post.published_date|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="comment-form" id="commentForm">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="error-messages">
+                    <h4>Please correct the following errors:</h4>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <div class="error-message">
+                                <i class="error-icon">⚠️</i>
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}" class="form-label">
+                    Your Comment
+                </label>
+                {{ form.content }}
+                <div class="char-counter-container">
+                    <div class="char-counter" id="charCounter">
+                        <span id="charCount">0</span> / 1000 characters
+                        <span class="char-min">(minimum 5 characters)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="btn-icon">💬</span>
+                    Add Comment
+                </button>
+                <a href="{% url 'post_detail' post.pk %}" class="btn btn-secondary">
+                    <span class="btn-icon">↩️</span>
+                    Back to Post
+                </a>
+            </div>
+        </form>
+
+        <div class="comment-guidelines">
+            <h4>💡 Comment Guidelines</h4>
+            <ul>
+                <li>✅ Keep comments relevant to the post topic</li>
+                <li>✅ Be respectful and constructive</li>
+                <li>✅ Use proper language and avoid spam</li>
+                <li>✅ Comments must be 5-1000 characters long</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.add-comment-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.add-comment-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.comment-header {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.comment-header h1 {
+    color: #667eea;
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.post-context {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    text-align: left;
+}
+
+.post-context h3 {
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.post-link {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.post-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.post-author {
+    color: #666;
+    font-style: italic;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.comment-form {
+    margin: 30px 0;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.char-counter-container {
+    margin-top: 8px;
+    text-align: right;
+}
+
+.char-counter {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.char-counter.warning {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.char-counter.danger {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.char-min {
+    font-size: 0.8rem;
+    color: #999;
+    margin-left: 10px;
+}
+
+.error-messages {
+    background: rgba(220, 53, 69, 0.1);
+    border: 2px solid rgba(220, 53, 69, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.error-messages h4 {
+    color: #721c24;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.error-message {
+    color: #721c24;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-icon {
+    font-size: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.btn-icon {
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.comment-guidelines {
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 30px;
+    border-left: 4px solid #28a745;
+}
+
+.comment-guidelines h4 {
+    color: #155724;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.comment-guidelines ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.comment-guidelines li {
+    padding: 5px 0;
+    font-size: 0.9rem;
+    color: #155724;
+}
+
+/* Loading state for submit button */
+.btn-primary.loading {
+    background: #6c757d;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.btn-primary.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .add-comment-container {
+        padding: 10px;
+    }
+    
+    .add-comment-card {
+        padding: 25px 20px;
+    }
+    
+    .comment-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('.comment-textarea');
+    const charCount = document.getElementById('charCount');
+    const charCounter = document.getElementById('charCounter');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('commentForm');
+    
+    if (textarea && charCount) {
+        function updateCharCount() {
+            const length = textarea.value.length;
+            charCount.textContent = length;
+            
+            // Update counter styling based on character count
+            if (length < 5) {
+                charCounter.className = 'char-counter danger';
+            } else if (length > 900) {
+                charCounter.className = 'char-counter warning';
+            } else if (length > 1000) {
+                charCounter.className = 'char-counter danger';
+            } else {
+                charCounter.className = 'char-counter';
+            }
+            
+            // Update submit button state
+            if (submitBtn) {
+                submitBtn.disabled = length < 5 || length > 1000;
+            }
+        }
+        
+        // Initial count update
+        updateCharCount();
+        
+        // Update count as user types
+        textarea.addEventListener('input', updateCharCount);
+        textarea.addEventListener('paste', function() {
+            setTimeout(updateCharCount, 10);
+        });
+    }
+    
+    // Form submission with loading state
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            const length = textarea ? textarea.value.length : 0;
+            
+            if (length < 5) {
+                e.preventDefault();
+                alert('Comment must be at least 5 characters long.');
+                return;
+            }
+            
+            if (length > 1000) {
+                e.preventDefault();
+                alert('Comment cannot exceed 1000 characters.');
+                return;
+            }
+            
+            // Add loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="btn-icon">⏳</span>Adding Comment...';
+        });
+    }
+    
+    // Auto-focus on textarea
+    if (textarea) {
+        textarea.focus();
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+Enter to submit
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            if (submitBtn && !submitBtn.disabled) {
+                form.submit();
+            }
+        }
+        
+        // Escape to go back
+        if (e.key === 'Escape') {
+            const backLink = document.querySelector('a[href*="post_detail"]');
+            if (backLink) {
+                window.location.href = backLink.href;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

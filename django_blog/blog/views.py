@@ -201,32 +201,42 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView
         return super().delete(request, *args, **kwargs)
 
 
-# ............CRUD FOR COMMENTS USING CBV AND FBV
+# ............CRUD FOR COMMENTS USING CBV
 
-@login_required
-def add_comment(request, post_id):
-    """Add a new comment to a post"""
-    post = get_object_or_404(Post, pk=post_id)
+class CommentCreateView(LoginRequiredMixin, generic.CreateView):
+    """Create a new comment - class-based view approach"""
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/add_comment.html'
     
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-            messages.success(request, 'Your comment has been added successfully!')
-            return HttpResponseRedirect(reverse('post_detail', args=[post_id]))
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = CommentForm()
+    def dispatch(self, request, *args, **kwargs):
+        """Get the post object and store it for later use"""
+        self.post = get_object_or_404(Post, pk=kwargs['post_id'])
+        return super().dispatch(request, *args, **kwargs)
     
-    context = {
-        'form': form,
-        'post': post
-    }
-    return render(request, 'blog/add_comment.html', context)
+    def get_context_data(self, **kwargs):
+        """Add post to context"""
+        context = super().get_context_data(**kwargs)
+        context['post'] = self.post
+        return context
+    
+    def form_valid(self, form):
+        """Set the comment's post and author before saving"""
+        form.instance.post = self.post
+        form.instance.author = self.request.user
+        messages.success(self.request, 'Your comment has been added successfully!')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        """Handle invalid form submission"""
+        messages.error(self.request, 'Please correct the errors in your comment.')
+        return super().form_invalid(form)
+    
+    def get_success_url(self):
+        """Redirect to the post detail page after successful comment creation"""
+        return reverse('post_detail', kwargs={'pk': self.post.pk})
+
+
 
 
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
@@ -282,30 +292,3 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteV
         return reverse('post_detail', kwargs={'pk': self.object.post.pk})
 
 
-# Function-based view to display post with comments and comment form
-def post_detail_with_comments(request, pk):
-    """Display post with comments and handle comment form submission"""
-    post = get_object_or_404(Post, pk=pk)
-    comments = post.comments.all()
-    
-    if request.method == 'POST' and request.user.is_authenticated:
-        comment_form = CommentForm(request.POST)
-        if comment_form.is_valid():
-            comment = comment_form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-            messages.success(request, 'Your comment has been added successfully!')
-            return HttpResponseRedirect(reverse('post_detail', args=[pk]))
-        else:
-            messages.error(request, 'Please correct the errors in your comment.')
-    else:
-        comment_form = CommentForm()
-    
-    context = {
-        'post': post,
-        'comments': comments,
-        'comment_form': comment_form,
-        'comment_count': comments.count()
-    }
-    return render(request, 'blog/post_detail.html', context)
