@@ -69,17 +69,17 @@
 
         <!-- Tags Field -->
         <div class="form-group">
-            <label for="{{ form.tags_input.id_for_label }}">{{ form.tags_input.label }}</label>
-            {{ form.tags_input }}
-            {% if form.tags_input.errors %}
+            <label for="{{ form.taggit_tags.id_for_label }}">{{ form.taggit_tags.label }}</label>
+            {{ form.taggit_tags }}
+            {% if form.taggit_tags.errors %}
                 <div class="field-errors">
-                    {% for error in form.tags_input.errors %}
+                    {% for error in form.taggit_tags.errors %}
                         <span class="error">{{ error }}</span>
                     {% endfor %}
                 </div>
             {% endif %}
             <div class="help-text">
-                {{ form.tags_input.help_text }}
+                {{ form.taggit_tags.help_text }}
             </div>
         </div>
 
@@ -257,18 +257,18 @@
 }
 
 /* Make tags input field have a special style */
-#id_tags_input {
+#id_taggit_tags {
     border-left: 4px solid #667eea;
     background: rgba(102, 126, 234, 0.02);
 }
 
-#id_tags_input:focus {
+#id_taggit_tags:focus {
     border-left-color: #764ba2;
     background: rgba(102, 126, 234, 0.05);
 }
 
 /* Tags input placeholder enhancement */
-#id_tags_input::placeholder {
+#id_taggit_tags::placeholder {
     color: rgba(102, 126, 234, 0.6);
     font-style: italic;
 }

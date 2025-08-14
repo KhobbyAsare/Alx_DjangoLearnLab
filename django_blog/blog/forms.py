@@ -72,98 +72,23 @@ class UserProfileForm(forms.ModelForm):
 
 
 class PostForm(forms.ModelForm):
-    """Form for creating and updating blog posts with tags"""
-    title = forms.CharField(
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter post title',
-            'maxlength': '200'
-        })
-    )
-    content = forms.CharField(
-        required=True,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'placeholder': 'Write your post content here...',
-            'rows': 8,
-            'cols': 80
-        })
-    )
-    tags_input = forms.CharField(
-        required=False,
-        max_length=200,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter tags separated by commas (e.g., python, web, django)',
-            'data-toggle': 'tooltip',
-            'title': 'Separate tags with commas. Tags will be created if they don\'t exist.'
-        }),
-        label='Tags',
-        help_text='Enter tags separated by commas. New tags will be created automatically.'
-    )
-
+    """Form for creating and updating blog posts with django-taggit"""
     class Meta:
         model = Post
-        fields = ['title', 'content']
+        fields = ['title', 'content', 'taggit_tags']
+        widgets = {
+            'taggit_tags': TagWidget(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter tags separated by commas',
+                'data-toggle': 'tooltip',
+                'title': 'Separate tags with commas. Tags will be created automatically.'
+            })
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # If editing an existing post, populate the tags field
-        if self.instance and self.instance.pk:
-            self.fields['tags_input'].initial = ', '.join([tag.name for tag in self.instance.tags.all()])
-
-    def clean_tags_input(self):
-        """Clean and validate tags input"""
-        tags_input = self.cleaned_data.get('tags_input', '')
-        if not tags_input.strip():
-            return []
-        
-        # Split by comma and clean each tag
-        tag_names = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
-        
-        # Validate tag names
-        for tag_name in tag_names:
-            if len(tag_name) > 50:
-                raise forms.ValidationError(f'Tag "{tag_name}" is too long. Maximum length is 50 characters.')
-            if not tag_name.replace('-', '').replace('_', '').isalnum():
-                raise forms.ValidationError(f'Tag "{tag_name}" contains invalid characters. Use only letters, numbers, hyphens, and underscores.')
-        
-        # Remove duplicates while preserving order
-        unique_tags = []
-        for tag in tag_names:
-            if tag not in unique_tags:
-                unique_tags.append(tag)
-                
-        return unique_tags
-
-    def save(self, commit=True):
-        """Save method for creating/updating posts with tags"""
-        post = super().save(commit=False)
-        post.title = self.cleaned_data['title']
-        post.content = self.cleaned_data['content']
-        
-        if commit:
-            post.save()
-            self.save_tags(post)
-            
-        return post
-    
-    def save_tags(self, post):
-        """Save tags for the post"""
-        tag_names = self.cleaned_data.get('tags_input', [])
-        
-        # Clear existing tags
-        post.tags.clear()
-        
-        # Create or get tags and add them to the post
-        for tag_name in tag_names:
-            tag, created = Tag.objects.get_or_create(
-                name=tag_name,
-                defaults={'slug': slugify(tag_name)}
-            )
-            post.tags.add(tag)
+        self.fields['taggit_tags'].label = "Tags"
+        self.fields['taggit_tags'].help_text = "Enter tags separated by commas. New tags will be created automatically."
 
 
 class TaggitPostForm(forms.ModelForm):
