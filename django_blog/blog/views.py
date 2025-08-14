@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from .forms import UserProfileForm, PostForm
 from .models import Post
 from django.views import generic
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 
 
@@ -128,36 +128,42 @@ class PostCreateView(LoginRequiredMixin, generic.CreateView):
         return super().form_valid(form)
 
 
-class PostUpdateView(LoginRequiredMixin, generic.UpdateView):
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/post_form.html'
     success_url = reverse_lazy('post_list')
     
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if obj.author != self.request.user:
-            messages.error(request, 'You can only edit your own posts.')
-            return redirect('post_list')
-        return super().dispatch(request, *args, **kwargs)
+    def test_func(self):
+        """Test if the current user is the author of the post"""
+        post = self.get_object()
+        return post.author == self.request.user
+    
+    def handle_no_permission(self):
+        """Handle case when user doesn't have permission"""
+        messages.error(self.request, 'You can only edit your own posts.')
+        return redirect('post_list')
     
     def form_valid(self, form):
         messages.success(self.request, 'Post updated successfully!')
         return super().form_valid(form)
 
 
-class PostDeleteView(LoginRequiredMixin, generic.DeleteView):
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Post
     template_name = 'blog/post_confirm_delete.html'
     success_url = reverse_lazy('post_list')
     context_object_name = 'post'
     
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if obj.author != self.request.user:
-            messages.error(request, 'You can only delete your own posts.')
-            return redirect('post_list')
-        return super().dispatch(request, *args, **kwargs)
+    def test_func(self):
+        """Test if the current user is the author of the post"""
+        post = self.get_object()
+        return post.author == self.request.user
+    
+    def handle_no_permission(self):
+        """Handle case when user doesn't have permission"""
+        messages.error(self.request, 'You can only delete your own posts.')
+        return redirect('post_list')
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Post deleted successfully!')
