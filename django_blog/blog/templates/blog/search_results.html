@@ -1,0 +1,418 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if query %}Search Results for "{{ query }}" - Django Blog{% else %}Search - Django Blog{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="search-results-container">
+    <div class="search-header">
+        {% if query %}
+            <h1>Search Results for "{{ query }}"</h1>
+            <p class="search-info">Found {{ total_results }} result{{ total_results|pluralize }} for your search.</p>
+        {% else %}
+            <h1>Search Posts</h1>
+            <p class="search-info">Enter keywords to search for posts by title, content, or tags.</p>
+        {% endif %}
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-form-container">
+        <form method="get" action="{% url 'search' %}" class="advanced-search-form">
+            {{ form.query }}
+            <button type="submit" class="search-submit-btn">
+                🔍 Search
+            </button>
+            {% if query %}
+                <a href="{% url 'search' %}" class="clear-search-btn">Clear Search</a>
+            {% endif %}
+        </form>
+        {% if form.query.errors %}
+            <div class="search-errors">
+                {% for error in form.query.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if query %}
+        {% if posts %}
+            <div class="search-results">
+                {% for post in posts %}
+                    <article class="search-result-card">
+                        <div class="result-header">
+                            <h3><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h3>
+                            <div class="result-meta">
+                                <span class="author">By {{ post.author.username }}</span>
+                                <span class="date">{{ post.published_date|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="result-content">
+                            <p>{{ post.content|truncatewords:40|linebreaks }}</p>
+                        </div>
+                        
+                        <!-- Tags -->
+                        {% if post.tags.all %}
+                            <div class="result-tags">
+                                <span class="tags-label">Tags:</span>
+                                {% for tag in post.tags.all %}
+                                    <a href="{% url 'posts_by_tag' tag.slug %}" class="result-tag">{{ tag.name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="result-actions">
+                            <a href="{% url 'post_detail' post.pk %}" class="btn btn-primary">Read More</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-results">
+                <div class="no-results-icon">🔍</div>
+                <h2>No posts found</h2>
+                <p>We couldn't find any posts matching "{{ query }}".</p>
+                <div class="search-suggestions">
+                    <h4>Try:</h4>
+                    <ul>
+                        <li>Checking your spelling</li>
+                        <li>Using different keywords</li>
+                        <li>Using more general terms</li>
+                        <li>Browsing <a href="{% url 'tag_list' %}">all tags</a> or <a href="{% url 'post_list' %}">all posts</a></li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<style>
+.search-results-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.search-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.search-header h1 {
+    color: white;
+    margin-bottom: 10px;
+    font-size: 2.2rem;
+}
+
+.search-info {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.search-form-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-search-form {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.advanced-search-form input[type="text"] {
+    flex: 1;
+    min-width: 300px;
+    padding: 12px 20px;
+    border: 2px solid #e1e5e9;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.advanced-search-form input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-submit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.search-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.clear-search-btn {
+    color: #6c757d;
+    text-decoration: none;
+    padding: 12px 20px;
+    border: 2px solid #6c757d;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.clear-search-btn:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.search-errors {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.search-errors .error {
+    display: block;
+    color: #dc3545;
+    font-weight: 500;
+    background: rgba(220, 53, 69, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin: 5px auto;
+    max-width: 400px;
+}
+
+.search-results {
+    display: grid;
+    gap: 25px;
+}
+
+.search-result-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.search-result-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.result-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.4rem;
+}
+
+.result-header h3 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.result-header h3 a:hover {
+    color: #667eea;
+}
+
+.result-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.result-content {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.result-tags {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.tags-label {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.result-tag {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(102, 126, 234, 0.1);
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin: 2px;
+}
+
+.result-tag:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.result-actions {
+    text-align: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.no-results-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.no-results h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.no-results p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.search-suggestions {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 30px;
+    text-align: left;
+    max-width: 400px;
+    margin: 30px auto 0;
+}
+
+.search-suggestions h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.search-suggestions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.search-suggestions li {
+    padding: 5px 0;
+    color: #555;
+    position: relative;
+    padding-left: 20px;
+}
+
+.search-suggestions li:before {
+    content: "•";
+    color: #667eea;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.search-suggestions a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.search-suggestions a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .search-results-container {
+        padding: 15px;
+    }
+    
+    .search-header {
+        padding: 20px;
+    }
+    
+    .search-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .advanced-search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .advanced-search-form input[type="text"] {
+        min-width: auto;
+        margin-bottom: 10px;
+    }
+    
+    .result-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .search-result-card {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,414 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block title %}All Tags - Django Blog{% endblock %}
+
+{% block content %}
+<div class="tag-list-container">
+    <div class="tag-list-header">
+        <h1>All Tags</h1>
+        <p class="tag-info">Explore {{ total_tags }} tag{{ total_tags|pluralize }} from {{ total_posts }} post{{ total_posts|pluralize }}.</p>
+    </div>
+
+    {% if tags %}
+        <div class="tags-grid">
+            {% for tag in tags %}
+                <div class="tag-card">
+                    <div class="tag-info-section">
+                        <h3>
+                            <a href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>
+                        </h3>
+                        <div class="tag-meta">
+                            <span class="post-count">{{ tag.post_count }} post{{ tag.post_count|pluralize }}</span>
+                            <span class="tag-created">Created {{ tag.created_at|date:"M Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tag-actions">
+                        <a href="{{ tag.get_absolute_url }}" class="btn btn-primary">
+                            View Posts
+                        </a>
+                    </div>
+                    
+                    <!-- Recent posts preview -->
+                    {% if tag.posts.all %}
+                        <div class="recent-posts">
+                            <h4>Recent Posts:</h4>
+                            <ul class="recent-posts-list">
+                                {% for post in tag.posts.all|slice:":3" %}
+                                    <li>
+                                        <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
+                                        <small>by {{ post.author.username }}</small>
+                                    </li>
+                                {% endfor %}
+                                {% if tag.post_count > 3 %}
+                                    <li class="more-posts">
+                                        <a href="{{ tag.get_absolute_url }}">+ {{ tag.post_count|add:"-3" }} more post{{ tag.post_count|add:"-3"|pluralize }}</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Tag Cloud Section -->
+        <div class="tag-cloud-section">
+            <h2>Tag Cloud</h2>
+            <div class="tag-cloud">
+                {% for tag in tags %}
+                    <a href="{{ tag.get_absolute_url }}" 
+                       class="tag-cloud-item" 
+                       data-count="{{ tag.post_count }}"
+                       title="{{ tag.post_count }} post{{ tag.post_count|pluralize }}">
+                        {{ tag.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="no-tags">
+            <div class="no-tags-icon">🏷️</div>
+            <h2>No tags yet</h2>
+            <p>Tags will appear here when posts are published with tags.</p>
+            <div class="no-tags-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'post_create' %}" class="btn btn-primary">Create a Post</a>
+                {% endif %}
+                <a href="{% url 'post_list' %}" class="btn btn-outline">View All Posts</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.tag-list-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.tag-list-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tag-list-header h1 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 2.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tag-info {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 50px;
+}
+
+.tag-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.tag-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    border-left-color: #667eea;
+}
+
+.tag-info-section h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.4rem;
+}
+
+.tag-info-section h3 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.tag-info-section h3 a:hover {
+    color: #667eea;
+}
+
+.tag-meta {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.post-count {
+    font-weight: 600;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.tag-created {
+    font-style: italic;
+}
+
+.tag-actions {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline {
+    border: 2px solid #667eea;
+    color: #667eea;
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+.recent-posts {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 20px;
+}
+
+.recent-posts h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.recent-posts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recent-posts-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.recent-posts-list li:last-child {
+    border-bottom: none;
+}
+
+.recent-posts-list li a {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    flex: 1;
+}
+
+.recent-posts-list li a:hover {
+    color: #667eea;
+}
+
+.recent-posts-list small {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.more-posts a {
+    color: #667eea !important;
+    font-weight: 600 !important;
+    font-style: italic;
+}
+
+.tag-cloud-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tag-cloud-section h2 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.tag-cloud {
+    text-align: center;
+    line-height: 2.5;
+}
+
+.tag-cloud-item {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    margin: 5px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.2);
+    font-size: calc(0.8rem + 0.3vw);
+}
+
+/* Dynamic sizing based on post count */
+.tag-cloud-item[data-count="1"] { font-size: 0.85rem; opacity: 0.7; }
+.tag-cloud-item[data-count="2"] { font-size: 0.9rem; opacity: 0.8; }
+.tag-cloud-item[data-count="3"] { font-size: 1rem; opacity: 0.85; }
+.tag-cloud-item[data-count="4"] { font-size: 1.1rem; opacity: 0.9; }
+.tag-cloud-item[data-count="5"] { font-size: 1.2rem; opacity: 0.95; }
+
+.tag-cloud-item:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.no-tags {
+    text-align: center;
+    padding: 80px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.no-tags-icon {
+    font-size: 5rem;
+    margin-bottom: 25px;
+    opacity: 0.5;
+}
+
+.no-tags h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 2rem;
+}
+
+.no-tags p {
+    color: #666;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.no-tags-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .tag-list-container {
+        padding: 15px;
+    }
+    
+    .tag-list-header {
+        padding: 25px 15px;
+    }
+    
+    .tag-list-header h1 {
+        font-size: 2rem;
+    }
+    
+    .tags-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .tag-card {
+        padding: 20px;
+    }
+    
+    .tag-meta {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 5px;
+    }
+    
+    .tag-cloud-section {
+        padding: 25px 20px;
+    }
+    
+    .tag-cloud-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    .recent-posts-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .no-tags {
+        padding: 50px 20px;
+    }
+    
+    .no-tags h2 {
+        font-size: 1.6rem;
+    }
+    
+    .no-tags-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .tag-cloud-item {
+        font-size: 0.8rem !important;
+        padding: 6px 12px;
+        margin: 3px;
+    }
+}
+</style>
+{% endblock %}

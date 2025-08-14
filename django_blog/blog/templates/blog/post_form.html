@@ -67,6 +67,22 @@
             </div>
         </div>
 
+        <!-- Tags Field -->
+        <div class="form-group">
+            <label for="{{ form.tags_input.id_for_label }}">{{ form.tags_input.label }}</label>
+            {{ form.tags_input }}
+            {% if form.tags_input.errors %}
+                <div class="field-errors">
+                    {% for error in form.tags_input.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="help-text">
+                {{ form.tags_input.help_text }}
+            </div>
+        </div>
+
         <div class="preview-area" id="previewArea" style="display: none;">
             <h3>Preview</h3>
             <div id="previewContent" class="preview-content"></div>
@@ -225,6 +241,36 @@
     border-radius: 5px;
     border-left: 3px solid #dc3545;
     margin-bottom: 5px;
+}
+
+/* Tags Field Specific Styles */
+.help-text {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #667eea;
+    font-style: italic;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    line-height: 1.4;
+}
+
+/* Make tags input field have a special style */
+#id_tags_input {
+    border-left: 4px solid #667eea;
+    background: rgba(102, 126, 234, 0.02);
+}
+
+#id_tags_input:focus {
+    border-left-color: #764ba2;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+/* Tags input placeholder enhancement */
+#id_tags_input::placeholder {
+    color: rgba(102, 126, 234, 0.6);
+    font-style: italic;
 }
 
 .preview-area {

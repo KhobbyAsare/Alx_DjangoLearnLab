@@ -28,6 +28,16 @@
                         {{ post.content|truncatewords:30|linebreaks }}
                     </div>
                     
+                    <!-- Tags -->
+                    {% if post.tags.all %}
+                        <div class="post-tags">
+                            <span class="tags-label">Tags:</span>
+                            {% for tag in post.tags.all %}
+                                <a href="{% url 'posts_by_tag' tag.slug %}" class="tag-link">{{ tag.name }}</a>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <div class="post-actions">
                         <a href="{% url 'post_detail' post.pk %}" class="btn btn-outline">Read More</a>
                         {% if user == post.author %}
@@ -137,7 +147,41 @@
 .post-content-preview {
     color: #555;
     line-height: 1.6;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+}
+
+.post-tags {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.tags-label {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.tag-link {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 10px;
+    margin: 2px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.2);
+}
+
+.tag-link:hover {
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
 }
 
 .post-actions {

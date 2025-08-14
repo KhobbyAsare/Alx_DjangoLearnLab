@@ -5,11 +5,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
-from .forms import UserProfileForm, PostForm, CommentForm
-from .models import Post, Comment
+from .forms import UserProfileForm, PostForm, CommentForm, SearchForm
+from .models import Post, Comment, Tag
+from django.db.models import Q
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy, reverse
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
 
 
 def home(request):
@@ -110,6 +113,7 @@ class PostListView(generic.ListView):
     paginate_by = 10
 
 
+@method_decorator(never_cache, name='dispatch')
 class PostDetailView(generic.DetailView):
     model = Post
     template_name = 'blog/post_detail.html'
@@ -117,7 +121,8 @@ class PostDetailView(generic.DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['comments'] = self.object.comments.all()
+        # Ensure comments are filtered specifically for this post
+        context['comments'] = self.object.comments.select_related('author').order_by('-created_at')
         context['comment_form'] = CommentForm()
         context['comment_count'] = self.object.comments.count()
         return context
@@ -265,6 +270,77 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateV
         return reverse('post_detail', kwargs={'pk': self.object.post.pk})
 
 
+# ............SEARCH AND TAG FUNCTIONALITY
+
+def search_posts(request):
+    """Search posts by title, content, or tags"""
+    form = SearchForm()
+    posts = []
+    query = None
+    
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            # Complex search using Q objects
+            search_query = Q(title__icontains=query) | Q(content__icontains=query) | Q(tags__name__icontains=query)
+            posts = Post.objects.filter(search_query).distinct().order_by('-published_date')
+    
+    context = {
+        'form': form,
+        'posts': posts,
+        'query': query,
+        'total_results': posts.count() if posts else 0
+    }
+    
+    return render(request, 'blog/search_results.html', context)
+
+
+def posts_by_tag(request, slug):
+    """Display posts filtered by a specific tag"""
+    tag = get_object_or_404(Tag, slug=slug)
+    posts = tag.posts.all().order_by('-published_date')
+    
+    context = {
+        'tag': tag,
+        'posts': posts,
+        'total_posts': posts.count()
+    }
+    
+    return render(request, 'blog/posts_by_tag.html', context)
+
+
+class TagListView(generic.ListView):
+    """Display all tags with post counts"""
+    model = Tag
+    template_name = 'blog/tag_list.html'
+    context_object_name = 'tags'
+    ordering = ['name']
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_tags'] = Tag.objects.count()
+        context['total_posts'] = Post.objects.count()
+        return context
+
+
+class PostListByTagView(generic.ListView):
+    """Alternative class-based view for posts by tag"""
+    model = Post
+    template_name = 'blog/posts_by_tag.html'
+    context_object_name = 'posts'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+        return Post.objects.filter(tags=self.tag).order_by('-published_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tag'] = self.tag
+        context['total_posts'] = self.get_queryset().count()
+        return context
+
 class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     """Delete a comment - only by the comment author"""
     model = Comment
@@ -290,5 +366,4 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteV
     
     def get_success_url(self):
         return reverse('post_detail', kwargs={'pk': self.object.post.pk})
-
 
