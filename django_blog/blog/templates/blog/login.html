@@ -5,9 +5,9 @@
 
 {% block content %}
 <!-- Load login-specific CSS -->
-<link rel="stylesheet" href="{% static 'css/login.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/login.css' %}">
 
-<div class="form-container">
+<div class="login-form">
     <h2>Login</h2>
     
     <form method="post">
@@ -16,11 +16,11 @@
         <button type="submit">Login</button>
     </form>
     
-    <div class="auth-links">
+    <div class="login-links">
         <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
     </div>
 </div>
 
 <!-- Load login-specific JavaScript -->
-<script src="{% static 'js/login.js' %}"></script>
+<script src="{% static 'blog/js/login.js' %}"></script>
 {% endblock %}
