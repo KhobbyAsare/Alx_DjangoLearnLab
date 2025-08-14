@@ -13,12 +13,7 @@ urlpatterns = [
     # Post CRUD URLs
     path('posts/', views.PostListView.as_view(), name='post_list'),
     path('posts/<int:pk>/', views.PostDetailView.as_view(), name='post_detail'),
-    path('posts/create/', views.PostCreateView.as_view(), name='post_create'),
-    path('posts/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_update'),
-    path('posts/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
-    
-    # Additional URL patterns as requested
-    path('post/new/', views.PostCreateView.as_view(), name='post_new'),
-    path('post/<int:pk>/update/', views.PostUpdateView.as_view(), name='post_update_alt'),
-    path('post/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete_alt'),
+    path('post/new/', views.PostCreateView.as_view(), name='post_create'),
+    path('post/<int:pk>/update/', views.PostUpdateView.as_view(), name='post_update'),
+    path('post/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
 ]
