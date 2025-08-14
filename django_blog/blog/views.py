@@ -211,7 +211,7 @@ class CommentCreateView(LoginRequiredMixin, generic.CreateView):
     
     def dispatch(self, request, *args, **kwargs):
         """Get the post object and store it for later use"""
-        self.post = get_object_or_404(Post, pk=kwargs['post_id'])
+        self.post = get_object_or_404(Post, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
