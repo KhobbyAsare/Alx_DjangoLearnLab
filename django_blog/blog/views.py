@@ -324,19 +324,24 @@ class TagListView(generic.ListView):
         return context
 
 
-class PostListByTagView(generic.ListView):
-    """Alternative class-based view for posts by tag"""
+class PostByTagListView(generic.ListView):
+    """Class-based view for posts filtered by tag using django-taggit"""
     model = Post
     template_name = 'blog/posts_by_tag.html'
     context_object_name = 'posts'
     paginate_by = 10
     
     def get_queryset(self):
-        self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-        return Post.objects.filter(tags=self.tag).order_by('-published_date')
+        tag_slug = self.kwargs['tag_slug']
+        # Filter posts by taggit_tags instead of custom tags
+        return Post.objects.filter(taggit_tags__slug=tag_slug).order_by('-published_date')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Get the tag from taggit's Tag model
+        from taggit.models import Tag as TaggitTag
+        tag_slug = self.kwargs['tag_slug']
+        self.tag = get_object_or_404(TaggitTag, slug=tag_slug)
         context['tag'] = self.tag
         context['total_posts'] = self.get_queryset().count()
         return context

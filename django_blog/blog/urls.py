@@ -26,4 +26,5 @@ urlpatterns = [
     path('search/', views.search_posts, name='search'),
     path('tags/', views.TagListView.as_view(), name='tag_list'),
     path('tags/<slug:slug>/', views.posts_by_tag, name='posts_by_tag'),
+    path('tags/<slug:tag_slug>/', views.PostByTagListView.as_view(), name='posts_by_tag_cbv'),
 ]
