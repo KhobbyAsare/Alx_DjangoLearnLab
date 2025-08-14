@@ -1,8 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Post, Comment, Tag
-from django.utils.text import slugify
+from .models import Post, Comment
 from taggit.forms import TagWidget
 
 
@@ -73,22 +72,16 @@ class UserProfileForm(forms.ModelForm):
 
 class PostForm(forms.ModelForm):
     """Form for creating and updating blog posts with django-taggit"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['taggit_tags'].widget = TagWidget()
+        self.fields['taggit_tags'].label = "Tags"
+        self.fields['taggit_tags'].help_text = "Enter tags separated by commas. New tags will be created automatically."
+    
     class Meta:
         model = Post
         fields = ['title', 'content', 'taggit_tags']
-        widgets = {
-            'taggit_tags': TagWidget(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter tags separated by commas',
-                'data-toggle': 'tooltip',
-                'title': 'Separate tags with commas. Tags will be created automatically.'
-            })
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['taggit_tags'].label = "Tags"
-        self.fields['taggit_tags'].help_text = "Enter tags separated by commas. New tags will be created automatically."
 
 
 class TaggitPostForm(forms.ModelForm):

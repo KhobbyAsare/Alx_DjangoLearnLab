@@ -258,13 +258,24 @@
 
 /* Make tags input field have a special style */
 #id_taggit_tags {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e1e5e9;
     border-left: 4px solid #667eea;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
     background: rgba(102, 126, 234, 0.02);
+    color: #333;
 }
 
 #id_taggit_tags:focus {
+    outline: none;
+    border-color: #667eea;
     border-left-color: #764ba2;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
 }
 
 /* Tags input placeholder enhancement */
