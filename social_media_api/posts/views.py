@@ -130,7 +130,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for handling CRUD operations on comments
     """
-    queryset = Comment.objects.filter(is_active=True)
+    queryset = Comment.objects.all()  # Base queryset for all comments
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnlyForComments]
     filter_backends = [
         DjangoFilterBackend,
@@ -141,6 +141,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     search_fields = ['content', 'author__username']
     ordering_fields = ['created_at', 'updated_at']
     ordering = ['created_at']
+    
+    def get_queryset(self):
+        """
+        Return queryset for comments with optional filtering
+        """
+        queryset = Comment.objects.all()
+        
+        # Filter out inactive comments for most views
+        if self.action not in ['destroy', 'update', 'partial_update']:
+            queryset = queryset.filter(is_active=True)
+        
+        return queryset
     
     def get_serializer_class(self):
         """
