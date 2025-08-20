@@ -11,7 +11,11 @@ from .serializers import (
     UserLoginSerializer,
     UserProfileSerializer,
     UserUpdateSerializer,
-    UserListSerializer
+    UserListSerializer,
+    FollowSerializer,
+    FollowerSerializer,
+    FollowingSerializer,
+    UserSocialSerializer
 )
 
 
@@ -113,11 +117,205 @@ class UserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+class FollowersListView(generics.GenericAPIView):
+    """
+    View for listing a user's followers
+    """
+    serializer_class = FollowerSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, user_id=None, *args, **kwargs):
+        """
+        Get list of followers for a specific user (or current user if no user_id provided)
+        """
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({
+                    'error': 'User not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+        
+        followers = user.followers.all()
+        serializer = self.get_serializer(followers, many=True, context={'request': request})
+        
+        return Response({
+            'user': user.username,
+            'follower_count': followers.count(),
+            'followers': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class FollowingListView(generics.GenericAPIView):
+    """
+    View for listing users that a user is following
+    """
+    serializer_class = FollowingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, user_id=None, *args, **kwargs):
+        """
+        Get list of users that a specific user is following (or current user if no user_id provided)
+        """
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({
+                    'error': 'User not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+        
+        following = user.following.all()
+        serializer = self.get_serializer(following, many=True, context={'request': request})
+        
+        return Response({
+            'user': user.username,
+            'following_count': following.count(),
+            'following': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class UserSocialDetailView(generics.GenericAPIView):
+    """
+    View for retrieving detailed social information about a user
+    """
+    serializer_class = UserSocialSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, user_id, *args, **kwargs):
+        """
+        Get detailed social information for a specific user
+        """
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(user, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FollowUserView(generics.GenericAPIView):
+    """
+    View for following a user
+    """
+    serializer_class = FollowSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Follow a user by user_id
+        """
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        
+        user_id = serializer.validated_data['user_id']
+        user_to_follow = User.objects.get(id=user_id)
+        current_user = request.user
+        
+        # Check if already following
+        if current_user.following.filter(id=user_id).exists():
+            return Response({
+                'error': f'You are already following {user_to_follow.username}',
+                'is_following': True
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Follow the user
+        current_user.following.add(user_to_follow)
+        
+        return Response({
+            'message': f'You are now following {user_to_follow.username}',
+            'is_following': True,
+            'user': UserSocialSerializer(user_to_follow, context={'request': request}).data
+        }, status=status.HTTP_200_OK)
+
+
+class UnfollowUserView(generics.GenericAPIView):
+    """
+    View for unfollowing a user
+    """
+    serializer_class = FollowSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Unfollow a user by user_id
+        """
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        
+        user_id = serializer.validated_data['user_id']
+        user_to_unfollow = User.objects.get(id=user_id)
+        current_user = request.user
+        
+        # Check if not following
+        if not current_user.following.filter(id=user_id).exists():
+            return Response({
+                'error': f'You are not following {user_to_unfollow.username}',
+                'is_following': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Unfollow the user
+        current_user.following.remove(user_to_unfollow)
+        
+        return Response({
+            'message': f'You unfollowed {user_to_unfollow.username}',
+            'is_following': False,
+            'user': UserSocialSerializer(user_to_unfollow, context={'request': request}).data
+        }, status=status.HTTP_200_OK)
+
+
+class ToggleFollowUserView(generics.GenericAPIView):
+    """
+    View for toggling follow/unfollow status (combined follow/unfollow)
+    """
+    serializer_class = FollowSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Toggle follow/unfollow status for a user by user_id
+        """
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        
+        user_id = serializer.validated_data['user_id']
+        target_user = User.objects.get(id=user_id)
+        current_user = request.user
+        
+        # Toggle follow status
+        if current_user.following.filter(id=user_id).exists():
+            # Unfollow
+            current_user.following.remove(target_user)
+            message = f'You unfollowed {target_user.username}'
+            is_following = False
+        else:
+            # Follow
+            current_user.following.add(target_user)
+            message = f'You are now following {target_user.username}'
+            is_following = True
+        
+        return Response({
+            'message': message,
+            'is_following': is_following,
+            'user': UserSocialSerializer(target_user, context={'request': request}).data
+        }, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def follow_user(request, username):
     """
-    View for following/unfollowing a user
+    Legacy view for following/unfollowing a user by username (kept for backwards compatibility)
     """
     try:
         user_to_follow = get_object_or_404(User, username=username)
