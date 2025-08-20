@@ -173,3 +173,107 @@ class UserListSerializer(serializers.ModelSerializer):
             'bio', 'profile_picture', 'follower_count'
         )
         read_only_fields = ('id', 'username', 'follower_count')
+
+
+class FollowSerializer(serializers.Serializer):
+    """
+    Serializer for follow/unfollow operations
+    """
+    user_id = serializers.IntegerField()
+    
+    def validate_user_id(self, value):
+        """
+        Validate that the user exists and is not the current user
+        """
+        try:
+            user = User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
+        
+        request = self.context.get('request')
+        if request and request.user.id == value:
+            raise serializers.ValidationError("You cannot follow yourself")
+        
+        return value
+
+
+class FollowerSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying follower information
+    """
+    is_following = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'username', 'first_name', 'last_name',
+            'bio', 'profile_picture', 'is_following'
+        )
+        read_only_fields = ('id', 'username', 'first_name', 'last_name')
+    
+    def get_is_following(self, obj):
+        """
+        Check if current user is following this user
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.is_following(obj)
+        return False
+
+
+class FollowingSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying following information
+    """
+    is_following = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'username', 'first_name', 'last_name',
+            'bio', 'profile_picture', 'is_following'
+        )
+        read_only_fields = ('id', 'username', 'first_name', 'last_name')
+    
+    def get_is_following(self, obj):
+        """
+        This will always be True since these are users the current user is following
+        """
+        return True
+
+
+class UserSocialSerializer(serializers.ModelSerializer):
+    """
+    Enhanced user serializer with social information
+    """
+    follower_count = serializers.ReadOnlyField()
+    following_count = serializers.ReadOnlyField()
+    is_following = serializers.SerializerMethodField()
+    is_followed_by = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'username', 'first_name', 'last_name', 'bio',
+            'profile_picture', 'follower_count', 'following_count',
+            'is_following', 'is_followed_by', 'date_joined'
+        )
+        read_only_fields = ('id', 'username', 'date_joined')
+    
+    def get_is_following(self, obj):
+        """
+        Check if current user is following this user
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.is_following(obj)
+        return False
+    
+    def get_is_followed_by(self, obj):
+        """
+        Check if this user is following the current user
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.is_following(request.user)
+        return False

@@ -41,3 +41,29 @@ class User(AbstractUser):
     def following_count(self):
         """Return the number of users this user is following"""
         return self.following.count()
+    
+    def follow(self, user):
+        """Follow another user"""
+        if not self.is_following(user):
+            self.following.add(user)
+            return True
+        return False
+    
+    def unfollow(self, user):
+        """Unfollow another user"""
+        if self.is_following(user):
+            self.following.remove(user)
+            return True
+        return False
+    
+    def is_following(self, user):
+        """Check if this user is following another user"""
+        return self.following.filter(pk=user.pk).exists()
+    
+    def get_following_list(self):
+        """Get list of users this user is following"""
+        return self.following.all()
+    
+    def get_followers_list(self):
+        """Get list of users who follow this user"""
+        return self.followers.all()
