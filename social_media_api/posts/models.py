@@ -19,9 +19,7 @@ class Post(models.Model):
         max_length=200, 
         help_text="Post title"
     )
-    content = models.TextField(
-        help_text="Post content/body"
-    )
+    content = models.TextField()  # Basic TextField for post content
     image = models.ImageField(
         upload_to='posts/', 
         blank=True, 
@@ -77,10 +75,7 @@ class Comment(models.Model):
         related_name='comments',
         help_text="The user who created this comment"
     )
-    content = models.TextField(
-        max_length=1000,
-        help_text="Comment content"
-    )
+    content = models.TextField()  # Basic TextField for comment content
     parent = models.ForeignKey(
         'self', 
         on_delete=models.CASCADE, 
