@@ -5,7 +5,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 
-from .models import User
+from .models import User, CustomUser
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -23,7 +23,7 @@ class UserRegistrationView(generics.CreateAPIView):
     """
     View for user registration
     """
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -102,7 +102,7 @@ class UserDetailView(generics.RetrieveAPIView):
     """
     View for retrieving other users' profiles
     """
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'username'
@@ -112,7 +112,7 @@ class UserListView(generics.ListAPIView):
     """
     View for listing all users
     """
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -207,7 +207,7 @@ class FollowUserView(generics.GenericAPIView):
     """
     serializer_class = FollowSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     
     def post(self, request, *args, **kwargs):
         """
@@ -243,7 +243,7 @@ class UnfollowUserView(generics.GenericAPIView):
     """
     serializer_class = FollowSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     
     def post(self, request, *args, **kwargs):
         """
@@ -279,7 +279,7 @@ class ToggleFollowUserView(generics.GenericAPIView):
     """
     serializer_class = FollowSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     
     def post(self, request, *args, **kwargs):
         """

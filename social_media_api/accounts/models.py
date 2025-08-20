@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     """
     Custom User model extending Django's AbstractUser
     with additional fields for social media functionality
@@ -67,3 +67,7 @@ class User(AbstractUser):
     def get_followers_list(self):
         """Get list of users who follow this user"""
         return self.followers.all()
+
+
+# Alias for backwards compatibility
+User = CustomUser
