@@ -209,19 +209,31 @@ class FollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = CustomUser.objects.all()
     
-    def post(self, request, *args, **kwargs):
+    def post(self, request, user_id=None, *args, **kwargs):
         """
-        Follow a user by user_id
+        Follow a user by user_id (from URL parameter or request data)
         """
-        serializer = self.get_serializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        # Get user_id from URL parameter if provided, otherwise from request data
+        if user_id is not None:
+            # URL parameter provided
+            target_user_id = user_id
+        else:
+            # Get from request data using serializer
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            target_user_id = serializer.validated_data['user_id']
         
-        user_id = serializer.validated_data['user_id']
-        user_to_follow = User.objects.get(id=user_id)
+        try:
+            user_to_follow = User.objects.get(id=target_user_id)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         current_user = request.user
         
         # Check if already following
-        if current_user.following.filter(id=user_id).exists():
+        if current_user.following.filter(id=target_user_id).exists():
             return Response({
                 'error': f'You are already following {user_to_follow.username}',
                 'is_following': True
@@ -245,19 +257,31 @@ class UnfollowUserView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = CustomUser.objects.all()
     
-    def post(self, request, *args, **kwargs):
+    def post(self, request, user_id=None, *args, **kwargs):
         """
-        Unfollow a user by user_id
+        Unfollow a user by user_id (from URL parameter or request data)
         """
-        serializer = self.get_serializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
+        # Get user_id from URL parameter if provided, otherwise from request data
+        if user_id is not None:
+            # URL parameter provided
+            target_user_id = user_id
+        else:
+            # Get from request data using serializer
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            target_user_id = serializer.validated_data['user_id']
         
-        user_id = serializer.validated_data['user_id']
-        user_to_unfollow = User.objects.get(id=user_id)
+        try:
+            user_to_unfollow = User.objects.get(id=target_user_id)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         current_user = request.user
         
         # Check if not following
-        if not current_user.following.filter(id=user_id).exists():
+        if not current_user.following.filter(id=target_user_id).exists():
             return Response({
                 'error': f'You are not following {user_to_unfollow.username}',
                 'is_following': False
