@@ -1,7 +1,11 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from .models import User
+
+# Use get_user_model() for better flexibility
+User = get_user_model()
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -39,10 +43,56 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         """
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create_user(**validated_data)
+        user = get_user_model().objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
         return user
+
+
+class TokenRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user registration with automatic token creation
+    """
+    password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        validators=[validate_password]
+    )
+    password_confirm = serializers.CharField(write_only=True)
+    token = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'bio', 'password', 'password_confirm', 'token'
+        )
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
+
+    def validate(self, attrs):
+        """
+        Verify that password and password_confirm match
+        """
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError("Passwords don't match")
+        return attrs
+
+    def create(self, validated_data):
+        """
+        Create and return a new user instance with token
+        """
+        validated_data.pop('password_confirm')
+        password = validated_data.pop('password')
+        user = get_user_model().objects.create_user(**validated_data)
+        user.set_password(password)
+        user.save()
+        
+        # Create token for the new user
+        token = Token.objects.create(user=user)
+        
+        return user, token
 
 
 class UserLoginSerializer(serializers.Serializer):
