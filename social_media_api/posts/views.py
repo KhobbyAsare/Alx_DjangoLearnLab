@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, generics, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -231,3 +231,70 @@ class CommentViewSet(viewsets.ModelViewSet):
         
         serializer = CommentSerializer(comments, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class FeedView(generics.ListAPIView):
+    """
+    View that generates a feed based on the posts from users that the current user follows.
+    Posts are ordered by creation date, showing the most recent posts at the top.
+    """
+    serializer_class = PostListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [
+        DjangoFilterBackend, 
+        filters.SearchFilter, 
+        filters.OrderingFilter
+    ]
+    filterset_class = PostFilter
+    search_fields = ['title', 'content', 'author__username']
+    ordering_fields = ['created_at', 'updated_at', 'title']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """
+        Return posts from users that the current user follows,
+        ordered by creation date with most recent first.
+        """
+        user = self.request.user
+        
+        # Get users that the current user is following
+        following_users = user.following.all()
+        
+        # Filter posts by authors that the current user follows
+        # Only show published posts
+        queryset = Post.objects.filter(
+            author__in=following_users, 
+            is_published=True
+        ).order_by('-created_at')
+        
+        return queryset
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Override list to provide additional context in response
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        following_count = request.user.following.all().count()
+        
+        # If user is not following anyone, return helpful message
+        if following_count == 0:
+            return Response({
+                'message': 'You are not following anyone yet. Follow some users to see their posts in your feed!',
+                'results': [],
+                'count': 0,
+                'following_count': following_count
+            })
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data['following_count'] = following_count
+            return response
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': queryset.count(),
+            'following_count': following_count
+        })

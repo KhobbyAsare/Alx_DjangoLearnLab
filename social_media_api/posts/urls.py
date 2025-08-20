@@ -12,9 +12,11 @@ router.register(r'comments', views.CommentViewSet, basename='comment')
 urlpatterns = [
     # Include the router URLs
     path('', include(router.urls)),
+    # Custom feed view for posts from followed users
+    path('feed/', views.FeedView.as_view(), name='feed'),
 ]
 
-# The router automatically creates the following URLs:
+# Available URLs:
 # 
 # Posts:
 # GET    /api/posts/                 - List all posts
@@ -26,6 +28,7 @@ urlpatterns = [
 # GET    /api/posts/my_posts/        - Get current user's posts
 # POST   /api/posts/{id}/toggle_publish/ - Toggle post publish status
 # GET    /api/posts/{id}/comments/   - Get comments for a specific post
+# GET    /api/posts/feed/            - Get personalized feed from followed users
 #
 # Comments:
 # GET    /api/comments/              - List all comments
