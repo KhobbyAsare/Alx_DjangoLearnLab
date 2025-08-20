@@ -2,6 +2,9 @@
 Django==5.2.5
 djangorestframework==3.16.0
 
+# Filtering and Search
+django-filter==25.1
+
 # Image Processing
 Pillow==11.3.0
 

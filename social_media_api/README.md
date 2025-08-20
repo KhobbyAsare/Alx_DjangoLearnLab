@@ -8,9 +8,14 @@ A comprehensive RESTful API built with Django and Django REST Framework for soci
 - **User Registration**: Create new user accounts with extended profile information
 - **User Profile Management**: View and update user profiles
 - **Social Features**: Follow/unfollow system with follower counts
-- **Admin Interface**: Django admin for user management
-- **Profile Pictures**: Image upload functionality for user avatars
-- **Comprehensive API Documentation**: Well-documented endpoints
+- **Posts Management**: Create, read, update, and delete posts with rich content
+- **Comments System**: Nested commenting with replies (up to 1 level)
+- **Content Publishing**: Draft and publish functionality for posts
+- **Search & Filtering**: Advanced search and filtering capabilities
+- **Pagination**: Efficient pagination for large datasets
+- **Image Uploads**: Support for post images and profile pictures
+- **Admin Interface**: Django admin for comprehensive content management
+- **Comprehensive API Documentation**: Well-documented endpoints with examples
 
 ## 🛠️ Tech Stack
 
@@ -266,6 +271,235 @@ Authorization: Token <your_token_here>
 ]
 ```
 
+#### 📝 Posts Management Endpoints
+
+##### List All Posts
+- **URL**: `/api/posts/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Query Parameters**:
+  - `page`: Page number for pagination
+  - `search`: Search in title, content, and author
+  - `title`: Filter by title (partial match)
+  - `author_username`: Filter by author username
+  - `is_published`: Filter by published status
+  - `ordering`: Order by `created_at`, `updated_at`, `title` (prefix with `-` for descending)
+- **Response**: `200 OK`
+```json
+{
+    "count": 25,
+    "next": "http://127.0.0.1:8000/api/posts/?page=3",
+    "previous": "http://127.0.0.1:8000/api/posts/?page=1",
+    "results": [
+        {
+            "id": 1,
+            "title": "My First Post",
+            "excerpt": "This is the beginning of my first post...",
+            "image": null,
+            "author": {
+                "id": 1,
+                "username": "john_doe",
+                "first_name": "John",
+                "last_name": "Doe",
+                "profile_picture": null
+            },
+            "created_at": "2025-08-20T22:30:00Z",
+            "updated_at": "2025-08-20T22:30:00Z",
+            "comment_count": 3
+        }
+    ]
+}
+```
+
+##### Create New Post
+- **URL**: `/api/posts/`
+- **Method**: `POST`
+- **Authentication**: Required
+- **Request Body**:
+```json
+{
+    "title": "My New Post",
+    "content": "This is the content of my new post with detailed information.",
+    "image": null,
+    "is_published": true
+}
+```
+- **Response**: `201 Created`
+
+##### Get Specific Post
+- **URL**: `/api/posts/{id}/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK`
+```json
+{
+    "id": 1,
+    "title": "My First Post",
+    "content": "Full content of the post...",
+    "image": "posts/image.jpg",
+    "author": {
+        "id": 1,
+        "username": "john_doe",
+        "first_name": "John",
+        "last_name": "Doe",
+        "profile_picture": null
+    },
+    "created_at": "2025-08-20T22:30:00Z",
+    "updated_at": "2025-08-20T22:30:00Z",
+    "is_published": true,
+    "comment_count": 3,
+    "comments": [
+        {
+            "id": 1,
+            "content": "Great post!",
+            "author": {
+                "id": 2,
+                "username": "jane_smith",
+                "first_name": "Jane",
+                "last_name": "Smith"
+            },
+            "created_at": "2025-08-20T22:35:00Z",
+            "updated_at": "2025-08-20T22:35:00Z",
+            "reply_count": 1,
+            "replies": [
+                {
+                    "id": 2,
+                    "content": "Thank you!",
+                    "author": {
+                        "id": 1,
+                        "username": "john_doe",
+                        "first_name": "John",
+                        "last_name": "Doe"
+                    },
+                    "created_at": "2025-08-20T22:36:00Z",
+                    "updated_at": "2025-08-20T22:36:00Z"
+                }
+            ]
+        }
+    ]
+}
+```
+
+##### Update Post
+- **URL**: `/api/posts/{id}/`
+- **Method**: `PUT` or `PATCH`
+- **Authentication**: Required (must be author)
+- **Request Body**:
+```json
+{
+    "title": "Updated Post Title",
+    "content": "Updated content...",
+    "is_published": true
+}
+```
+- **Response**: `200 OK`
+
+##### Delete Post
+- **URL**: `/api/posts/{id}/`
+- **Method**: `DELETE`
+- **Authentication**: Required (must be author)
+- **Response**: `204 No Content`
+
+##### Get My Posts
+- **URL**: `/api/posts/my_posts/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK` (includes unpublished posts)
+
+##### Toggle Post Publish Status
+- **URL**: `/api/posts/{id}/toggle_publish/`
+- **Method**: `POST`
+- **Authentication**: Required (must be author)
+- **Response**: `200 OK`
+```json
+{
+    "message": "Post published successfully",
+    "is_published": true
+}
+```
+
+#### 💬 Comments Management Endpoints
+
+##### List All Comments
+- **URL**: `/api/comments/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Query Parameters**:
+  - `page`: Page number for pagination
+  - `search`: Search in content and author
+  - `post_id`: Filter by post ID
+  - `author_username`: Filter by author username
+  - `is_reply`: Filter replies (true/false)
+- **Response**: `200 OK`
+
+##### Create New Comment
+- **URL**: `/api/comments/`
+- **Method**: `POST`
+- **Authentication**: Required
+- **Request Body**:
+```json
+{
+    "content": "This is my comment on the post.",
+    "post": 1,
+    "parent": null
+}
+```
+- **Response**: `201 Created`
+
+##### Get Specific Comment
+- **URL**: `/api/comments/{id}/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK`
+
+##### Update Comment
+- **URL**: `/api/comments/{id}/`
+- **Method**: `PUT` or `PATCH`
+- **Authentication**: Required (must be author)
+- **Request Body**:
+```json
+{
+    "content": "Updated comment content..."
+}
+```
+- **Response**: `200 OK`
+
+##### Delete Comment
+- **URL**: `/api/comments/{id}/`
+- **Method**: `DELETE`
+- **Authentication**: Required (must be author)
+- **Response**: `204 No Content` (soft delete)
+
+##### Reply to Comment
+- **URL**: `/api/comments/{id}/reply/`
+- **Method**: `POST`
+- **Authentication**: Required
+- **Request Body**:
+```json
+{
+    "content": "This is my reply to the comment."
+}
+```
+- **Response**: `201 Created`
+
+##### Get Comment Replies
+- **URL**: `/api/comments/{id}/replies/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK`
+
+##### Get My Comments
+- **URL**: `/api/comments/my_comments/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK`
+
+##### Get Post Comments
+- **URL**: `/api/posts/{id}/comments/`
+- **Method**: `GET`
+- **Authentication**: Required
+- **Response**: `200 OK` (only top-level comments)
+
 ## 🗂️ Project Structure
 
 ```
@@ -279,6 +513,17 @@ social_media_api/
 │   ├── serializers.py       # API serializers
 │   ├── urls.py              # App URL patterns
 │   └── views.py             # API views
+├── posts/                    # Posts and comments app
+│   ├── migrations/           # Database migrations
+│   ├── __init__.py
+│   ├── admin.py             # Admin configuration
+│   ├── apps.py              # App configuration
+│   ├── models.py            # Post and Comment models
+│   ├── serializers.py       # API serializers
+│   ├── views.py             # API views
+│   ├── urls.py              # App URL patterns
+│   ├── permissions.py       # Custom permissions
+│   └── filters.py           # Custom filters
 ├── social_media_api/         # Main project directory
 │   ├── __init__.py
 │   ├── asgi.py              # ASGI config
@@ -286,8 +531,13 @@ social_media_api/
 │   ├── urls.py              # Main URL config
 │   └── wsgi.py              # WSGI config
 ├── media/                    # Media files (uploads)
+│   ├── posts/               # Post images
+│   └── profile_pics/        # Profile pictures
 ├── manage.py                # Django management script
-├── test_api.py              # API test script
+├── test_api.py              # User API test script
+├── test_posts_api.py        # Posts API test script
+├── requirements.txt         # Project dependencies
+├── .gitignore              # Git ignore file
 ├── README.md                # This file
 └── db.sqlite3               # SQLite database
 ```
@@ -296,8 +546,9 @@ social_media_api/
 
 ### Automated Testing
 
-Run the included test script to verify all endpoints:
+Run the included test scripts to verify all endpoints:
 
+**Test User Authentication:**
 ```bash
 python test_api.py
 ```
@@ -309,6 +560,21 @@ This will test:
 - Profile updates
 - User listing
 - User logout
+
+**Test Posts and Comments:**
+```bash
+python test_posts_api.py
+```
+
+This will test:
+- Post creation
+- Post listing with pagination
+- Post retrieval
+- Post updates
+- Comment creation
+- Comment replies
+- Search and filtering
+- Publish status toggling
 
 ### Manual Testing
 
@@ -375,6 +641,30 @@ The custom User model extends Django's AbstractUser with additional fields:
 - `followers`: ManyToManyField for follow relationships
 - `created_at`: Auto timestamp for creation
 - `updated_at`: Auto timestamp for updates
+
+### Post Model
+
+The Post model represents user-generated content:
+
+- `author`: ForeignKey to User (post author)
+- `title`: CharField for post title (max 200 chars)
+- `content`: TextField for post content/body
+- `image`: Optional ImageField for post images
+- `created_at`: Auto timestamp for creation
+- `updated_at`: Auto timestamp for updates
+- `is_published`: Boolean for draft/publish status
+
+### Comment Model
+
+The Comment model represents user comments on posts with nested reply support:
+
+- `post`: ForeignKey to Post (which post this comment belongs to)
+- `author`: ForeignKey to User (comment author)
+- `content`: TextField for comment content (max 1000 chars)
+- `parent`: ForeignKey to self for nested replies (optional)
+- `created_at`: Auto timestamp for creation
+- `updated_at`: Auto timestamp for updates
+- `is_active`: Boolean for soft delete functionality
 
 ## 🔒 Security Features
 
