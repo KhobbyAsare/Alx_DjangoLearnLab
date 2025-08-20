@@ -1,0 +1,15 @@
+# Core Dependencies
+Django==5.2.5
+djangorestframework==3.16.0
+
+# Image Processing
+Pillow==11.3.0
+
+# HTTP requests (for testing)
+requests==2.32.3
+
+# Optional dependencies for production
+# psycopg2-binary==2.9.9  # For PostgreSQL
+# gunicorn==21.2.0        # WSGI server
+# python-decouple==3.8    # Environment variables
+# whitenoise==6.5.0       # Static file serving
