@@ -261,11 +261,9 @@ class FeedView(generics.ListAPIView):
         following_users = user.following.all()
         
         # Filter posts by authors that the current user follows
-        # Only show published posts
-        queryset = Post.objects.filter(
-            author__in=following_users, 
-            is_published=True
-        ).order_by('-created_at')
+        # Only show published posts  
+        queryset = Post.objects.filter(author__in=following_users).order_by('-created_at')
+        queryset = queryset.filter(is_published=True)
         
         return queryset
     
