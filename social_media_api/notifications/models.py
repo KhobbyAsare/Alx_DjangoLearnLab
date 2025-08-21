@@ -67,6 +67,10 @@ class Notification(models.Model):
         blank=True,
         help_text="When the notification was marked as read"
     )
+    timestamp = models.DateTimeField(
+        default=timezone.now,
+        help_text="Timestamp when the notification was created"
+    )
     
     class Meta:
         ordering = ['-created_at']
