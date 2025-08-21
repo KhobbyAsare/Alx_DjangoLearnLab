@@ -6,6 +6,7 @@ from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 
 from .models import User, CustomUser
+from notifications.utils import create_follow_notification, delete_follow_notification
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -242,6 +243,9 @@ class FollowUserView(generics.GenericAPIView):
         # Follow the user
         current_user.following.add(user_to_follow)
         
+        # Create notification for the followed user
+        create_follow_notification(current_user, user_to_follow)
+        
         return Response({
             'message': f'You are now following {user_to_follow.username}',
             'is_following': True,
@@ -289,6 +293,9 @@ class UnfollowUserView(generics.GenericAPIView):
         
         # Unfollow the user
         current_user.following.remove(user_to_unfollow)
+        
+        # Delete the follow notification
+        delete_follow_notification(current_user, user_to_unfollow)
         
         return Response({
             'message': f'You unfollowed {user_to_unfollow.username}',

@@ -57,6 +57,17 @@ class Post(models.Model):
     def excerpt(self):
         """Return a short excerpt of the post content"""
         return self.content[:150] + '...' if len(self.content) > 150 else self.content
+    
+    @property
+    def like_count(self):
+        """Return the number of likes on this post"""
+        return self.likes.count()
+    
+    def is_liked_by(self, user):
+        """Check if a specific user has liked this post"""
+        if user.is_authenticated:
+            return self.likes.filter(user=user).exists()
+        return False
 
 
 class Comment(models.Model):
@@ -115,3 +126,36 @@ class Comment(models.Model):
     def reply_count(self):
         """Return the number of replies to this comment"""
         return self.replies.count()
+
+
+class Like(models.Model):
+    """
+    Model for post likes - tracks which users have liked which posts
+    """
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        help_text="The post that was liked"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        help_text="The user who liked the post"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the like was created"
+    )
+    
+    class Meta:
+        # Ensure a user can only like a post once
+        unique_together = ['post', 'user']
+        ordering = ['-created_at']
+        verbose_name = 'Like'
+        verbose_name_plural = 'Likes'
+        db_table = 'posts_like'
+    
+    def __str__(self):
+        return f"{self.user.username} likes {self.post.title}"
