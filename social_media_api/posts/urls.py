@@ -1,7 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
-from . import like_views
 
 app_name = 'posts'
 
@@ -17,15 +16,8 @@ urlpatterns = [
     path('feed/', views.FeedView.as_view(), name='feed'),
     
     # Like/Unlike endpoints
-    path('posts/<int:pk>/like/', like_views.PostLikeView.as_view(), name='post-like'),
-    path('posts/<int:pk>/unlike/', like_views.PostUnlikeView.as_view(), name='post-unlike'),
-    path('posts/<int:pk>/toggle-like/', like_views.PostToggleLikeView.as_view(), name='post-toggle-like'),
-    path('posts/<int:pk>/like-info/', like_views.PostLikeInfoView.as_view(), name='post-like-info'),
-    path('posts/<int:pk>/likes/', like_views.PostLikesListView.as_view(), name='post-likes-list'),
-    
-    # User likes
-    path('my-likes/', like_views.UserLikesListView.as_view(), name='user-likes'),
-    path('batch-like/', like_views.batch_like_action, name='batch-like'),
+    path('posts/<int:pk>/like/', views.LikePostView.as_view(), name='post-like'),
+    path('posts/<int:pk>/unlike/', views.UnlikePostView.as_view(), name='post-unlike'),
 ]
 
 # Available URLs:

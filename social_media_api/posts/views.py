@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.contrib.contenttypes.models import ContentType
 
-from .models import Post, Comment
+from .models import Post, Comment, Like
+from notifications.models import Notification
 from .serializers import (
     PostSerializer,
     PostListSerializer,
@@ -296,3 +299,92 @@ class FeedView(generics.ListAPIView):
             'count': queryset.count(),
             'following_count': following_count
         })
+
+
+class LikePostView(generics.GenericAPIView):
+    """
+    View to like a post and create appropriate notifications
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        """
+        Like a post by its primary key
+        """
+        post = generics.get_object_or_404(Post, pk=pk)
+        
+        # Prevent users from liking their own posts
+        if post.author == request.user:
+            return Response(
+                {'error': 'You cannot like your own post'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Try to create a like, get existing if already liked
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
+        
+        if created:
+            # Create notification for post author
+            if post.author != request.user:  # Don't notify self
+                Notification.objects.create(
+                    recipient=post.author,
+                    actor=request.user,
+                    verb='like',
+                    target=post,
+                    message=f"{request.user.username} liked your post: {post.title}"
+                )
+            
+            return Response({
+                'message': 'Post liked successfully',
+                'liked': True,
+                'like_count': post.like_count
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'message': 'You have already liked this post',
+                'liked': True,
+                'like_count': post.like_count
+            }, status=status.HTTP_200_OK)
+
+
+class UnlikePostView(generics.GenericAPIView):
+    """
+    View to unlike a post and remove appropriate notifications
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, pk):
+        """
+        Unlike a post by its primary key
+        """
+        post = generics.get_object_or_404(Post, pk=pk)
+        
+        try:
+            like = Like.objects.get(user=request.user, post=post)
+            like.delete()
+            
+            # Remove notification if exists
+            try:
+                notification = Notification.objects.get(
+                    recipient=post.author,
+                    actor=request.user,
+                    verb='like',
+                    target_content_type=ContentType.objects.get_for_model(Post),
+                    target_object_id=post.id
+                )
+                notification.delete()
+            except Notification.DoesNotExist:
+                pass  # Notification might not exist
+            
+            return Response({
+                'message': 'Post unliked successfully',
+                'liked': False,
+                'like_count': post.like_count
+            }, status=status.HTTP_200_OK)
+            
+        except Like.DoesNotExist:
+            return Response({
+                'error': 'You have not liked this post yet',
+                'liked': False,
+                'like_count': post.like_count
+            }, status=status.HTTP_400_BAD_REQUEST)
