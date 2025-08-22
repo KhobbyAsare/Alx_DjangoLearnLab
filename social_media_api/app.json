@@ -1,0 +1,43 @@
+{
+  "name": "Social Media API",
+  "description": "A Django REST API for social media functionality with user authentication, posts, comments, likes, and notifications",
+  "image": "heroku/python",
+  "repository": "https://github.com/yourusername/social_media_api",
+  "keywords": ["python", "django", "rest-api", "social-media"],
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    },
+    {
+      "plan": "heroku-redis:mini"
+    }
+  ],
+  "env": {
+    "DJANGO_ENVIRONMENT": {
+      "description": "Django environment setting",
+      "value": "production"
+    },
+    "SECRET_KEY": {
+      "description": "Django secret key for security",
+      "generator": "secret"
+    },
+    "ALLOWED_HOSTS": {
+      "description": "Comma-separated list of allowed hosts",
+      "value": ".herokuapp.com"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python manage.py migrate && python manage.py collectstatic --noinput"
+  }
+}
